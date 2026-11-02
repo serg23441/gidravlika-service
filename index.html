@@ -2,10 +2,12 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Гидравлика Сервис / отслеживание-оплаты</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#010409">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>⚙️</text></svg>">
 <!-- SheetJS для гарантированной выгрузки Excel (.xlsx) -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -16,245 +18,322 @@
     --green:#238636; --green2:#2ea043; --purple:#8250df; --red:#f85149;
     --orange:#f0883e;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 50px;
+    overflow-x: hidden;
+  }
 
   /* Navbar */
   .navbar {
-    display:flex; align-items:center; gap:14px;
-    background:#010409; border-bottom:1px solid var(--border);
-    padding:10px 20px; flex-wrap:wrap;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: #010409; border-bottom: 1px solid var(--border);
+    padding: 10px 16px; flex-wrap: wrap; position: sticky; top: 0; z-index: 50;
   }
-  .navbar svg { fill: var(--text); flex-shrink:0; }
-  .burger { cursor:pointer; }
-  .brand { font-size:15px; color:var(--text); white-space:nowrap; }
-  .brand .who { font-weight:600; }
-  .brand .slash { color:var(--muted); padding:0 2px; }
-  .brand .repo { font-weight:600; color:var(--blue); }
-  .tag-public { font-size:12px; color:var(--muted); border:1px solid var(--border); border-radius:99px; padding:2px 9px; }
-  .navbar .spacer { flex:1; }
-  .dbinfo { font-size:12.5px; color:var(--muted); white-space:nowrap; display:flex; align-items:center; gap:8px; }
+  .nav-left { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
+  .navbar svg { fill: var(--text); flex-shrink: 0; }
+  .brand { font-size: 14.5px; color: var(--text); white-space: nowrap; }
+  .brand .who { font-weight: 600; }
+  .brand .slash { color: var(--muted); padding: 0 2px; }
+  .brand .repo { font-weight: 600; color: var(--blue); }
+  .tag-public { font-size: 11px; color: var(--muted); border: 1px solid var(--border); border-radius: 99px; padding: 1px 7px; }
+  
+  .nav-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .dbinfo { font-size: 12px; color: var(--muted); white-space: nowrap; display: flex; align-items: center; gap: 6px; }
   .save-indicator {
-    display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:12px;
-    font-size:11.5px; font-weight:600; background:var(--panel2); border:1px solid var(--border);
+    display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 12px;
+    font-size: 11.5px; font-weight: 600; background: var(--panel2); border: 1px solid var(--border);
+    white-space: nowrap;
   }
-  .save-indicator.saved { color:#3fb950; border-color:rgba(46,160,67,.4); }
-  .save-indicator.saving { color:var(--orange); border-color:rgba(240,136,62,.4); }
+  .save-indicator.saved { color: #3fb950; border-color: rgba(46,160,67,.4); }
+  .save-indicator.saving { color: var(--orange); border-color: rgba(240,136,62,.4); }
 
   .btn-install {
-    display:inline-flex; align-items:center; gap:6px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
     background: #1f6feb; color: #fff; border: 1px solid #388bfd;
-    padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
-    transition: all 0.2s;
+    padding: 6px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    white-space: nowrap; transition: filter 0.2s; min-height: 34px;
   }
   .btn-install:hover { background: #388bfd; filter: brightness(1.1); }
 
-  .page { max-width:2500px; margin:0 auto; padding:0 16px; }
+  .page { max-width: 2500px; margin: 0 auto; padding: 0 12px; }
 
   /* Вкладки */
-  .tabs { display:flex; gap:4px; border-bottom:1px solid var(--border); margin:18px 0 20px; overflow-x:auto; }
-  .tab {
-    background:none; border:none; color:var(--muted);
-    font-size:14px; padding:10px 14px; cursor:pointer;
-    border-bottom:2px solid transparent; margin-bottom:-1px; white-space:nowrap;
-    display:flex; align-items:center; gap:6px;
+  .tabs {
+    display: flex; gap: 4px; border-bottom: 1px solid var(--border);
+    margin: 14px 0 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
-  .tab:hover { color:var(--text); }
-  .tab.active { color:var(--text); border-bottom-color:#fd8c73; font-weight:600; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    background: none; border: none; color: var(--muted);
+    font-size: 14px; padding: 10px 14px; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap;
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0; min-height: 44px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom-color: #fd8c73; font-weight: 600; }
   .tab-badge {
-    background:var(--panel2); border:1px solid var(--border); border-radius:10px;
-    font-size:11px; padding:1px 6px; color:var(--orange); font-weight:700;
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+    font-size: 11px; padding: 1px 6px; color: var(--orange); font-weight: 700;
   }
 
   /* Баннер */
   .banner {
-    background: rgba(56,139,253,.1); border:1px solid #388bfd;
-    border-radius:6px; padding:12px 16px; font-size:13.5px; line-height:1.55;
-    color:var(--blue); margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;
+    background: rgba(56,139,253,.1); border: 1px solid #388bfd;
+    border-radius: 6px; padding: 10px 14px; font-size: 13px; line-height: 1.5;
+    color: var(--blue); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;
   }
 
-  /* Поиск без лупы */
+  /* Поиск */
   .searchbar {
-    display:flex; gap:12px; align-items:center; flex-wrap:wrap;
-    background:var(--panel); border:1px solid var(--border); border-radius:6px;
-    padding:12px 14px; margin-bottom:16px;
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px; margin-bottom: 14px;
   }
-  .searchbox { flex:1; min-width:220px; max-width:420px; }
+  .searchbox { flex: 1; min-width: 180px; }
   .searchbox input {
-    width:100%; background:var(--bg); border:1px solid var(--border); border-radius:6px;
-    color:var(--text); padding:8px 12px; font-size:14px; outline:none;
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 9px 12px; font-size: 14px; outline: none; min-height: 40px;
   }
-  .searchbox input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(56,139,253,.3); }
-  .searchbox input::placeholder { color:var(--muted); }
-  .search-count { font-size:13px; color:var(--muted); }
+  .searchbox input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(56,139,253,.3); }
+  .search-count { font-size: 12.5px; color: var(--muted); }
   .btn-reset {
-    background:var(--panel2); border:1px solid var(--border); border-radius:6px;
-    color:var(--muted); padding:8px 14px; font-size:13px; cursor:pointer;
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--muted); padding: 9px 14px; font-size: 13px; cursor: pointer; min-height: 40px;
   }
-  .btn-reset:hover { color:var(--text); border-color:var(--muted); }
+  .btn-reset:hover { color: var(--text); border-color: var(--muted); }
 
-  /* Таблицы */
-  table { width:100%; border-collapse:collapse; }
+  /* Обертка для таблиц со скроллом на мобильных */
+  .table-wrap {
+    width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border); border-radius: 6px; background: var(--bg);
+    margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  }
+
+  table { width: 100%; border-collapse: collapse; min-width: 980px; }
   thead th {
-    position: sticky; background:var(--panel); color:var(--muted);
-    font-size:13px; font-weight:600; padding:9px 8px;
-    border:1px solid var(--border); z-index:10;
+    position: sticky; background: var(--panel); color: var(--muted);
+    font-size: 13px; font-weight: 600; padding: 9px 8px;
+    border: 1px solid var(--border); z-index: 10;
   }
-  tr.head1 th { top:0; height:40px; z-index:11; color:var(--text); }
-  tr.head2 th { top:40px; z-index:10; }
-  th.sortable { cursor:pointer; user-select:none; }
-  th.sortable:hover { color:var(--blue); background:var(--panel2); }
-  tbody td { border:1px solid var(--border); padding:6px; background:var(--bg); font-size:14px; }
+  tr.head1 th { top: 0; height: 40px; z-index: 11; color: var(--text); }
+  tr.head2 th { top: 40px; z-index: 10; }
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: var(--blue); background: var(--panel2); }
+  tbody td { border: 1px solid var(--border); padding: 6px; background: var(--bg); font-size: 14px; vertical-align: middle; }
   tr.month td {
-    background:var(--panel); color:var(--blue); font-weight:600; font-size:14.5px;
-    padding:9px 14px; cursor:pointer; user-select:none;
+    background: var(--panel); color: var(--blue); font-weight: 600; font-size: 14.5px;
+    padding: 10px 14px; cursor: pointer; user-select: none;
   }
-  tr.month:hover td { background:var(--panel2); }
-  tr.month .arrow { display:inline-block; width:20px; }
+  tr.month:hover td { background: var(--panel2); }
+  tr.month .arrow { display: inline-block; width: 20px; }
+
+  /* Инпуты таблицы */
   input[type="date"], input[type="text"], input[type="number"], select {
-    width:100%; background:var(--bg); border:1px solid var(--border); border-radius:6px;
-    color:var(--text); padding:8px 10px; font-size:14px; outline:none;
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 8px 10px; font-size: 14px; outline: none; min-height: 38px;
   }
-  input:focus, select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(56,139,253,.25); }
-  input[type="date"] { width:155px; }
-  input.num { width:140px; }
-  input.client { min-width:240px; }
-  input.hours { width:80px; text-align:center; }
-  input[type=number]::-webkit-inner-spin-button { opacity:.4; }
-  input[type="date"]::-webkit-calendar-picker-indicator { filter:invert(.6); cursor:pointer; }
+  input:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(56,139,253,.25); }
+  input[type="date"] { width: 145px; }
+  input.num { width: 120px; }
+  input.client { min-width: 180px; }
+  input.hours { width: 75px; text-align: center; }
   
   .pill {
-    display:block; width:100%; border-radius:6px; padding:8px 12px;
-    font-size:13.5px; font-weight:600; cursor:pointer; border:1px solid;
-    text-align:center; min-width:104px;
+    display: block; width: 100%; border-radius: 6px; padding: 8px 10px;
+    font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid;
+    text-align: center; min-width: 90px; min-height: 38px;
   }
-  .pill.yes    { background:rgba(46,160,67,.15); border-color:var(--green2); color:#3fb950; }
-  .pill.no     { background:rgba(248,81,73,.12); border-color:var(--red); color:#ff7b72; }
-  .pill.choose { background:var(--panel2); border-color:var(--border); color:var(--muted); }
-  .pill.urgent { background:rgba(240,136,62,.15); border-color:var(--orange); color:var(--orange); }
-  .pill.normal { background:var(--panel2); border-color:var(--border); color:var(--muted); }
-  .pill.done   { background:rgba(46,160,67,.15); border-color:var(--green2); color:#3fb950; }
-  .pill.todo   { background:rgba(88,166,255,.15); border-color:var(--blue); color:var(--blue); }
-  .pill:hover  { filter:brightness(1.2); }
+  .pill.yes    { background: rgba(46,160,67,.15); border-color: var(--green2); color: #3fb950; }
+  .pill.no     { background: rgba(248,81,73,.12); border-color: var(--red); color: #ff7b72; }
+  .pill.choose { background: var(--panel2); border-color: var(--border); color: var(--muted); }
+  .pill.urgent { background: rgba(240,136,62,.15); border-color: var(--orange); color: var(--orange); }
+  .pill.normal { background: var(--panel2); border-color: var(--border); color: var(--muted); }
+  .pill.done   { background: rgba(46,160,67,.15); border-color: var(--green2); color: #3fb950; }
+  .pill.todo   { background: rgba(88,166,255,.15); border-color: var(--blue); color: var(--blue); }
 
   .mini {
-    background:var(--panel2); border:1px solid var(--border); border-radius:6px;
-    color:var(--muted); padding:7px 12px; font-size:12.5px; cursor:pointer; white-space:nowrap;
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--muted); padding: 7px 10px; font-size: 12.5px; cursor: pointer; white-space: nowrap;
+    min-height: 36px;
   }
-  .mini:hover { color:var(--text); border-color:var(--muted); }
-  .photo-cell { white-space:nowrap; text-align:center; }
+  .mini:hover { color: var(--text); border-color: var(--muted); }
+  .photo-cell { white-space: nowrap; text-align: center; }
   .thumb {
-    width:44px; height:44px; object-fit:cover; border-radius:6px;
-    border:1px solid var(--blue); cursor:zoom-in; vertical-align:middle; margin-left:6px;
+    width: 40px; height: 40px; object-fit: cover; border-radius: 6px;
+    border: 1px solid var(--blue); cursor: zoom-in; vertical-align: middle; margin-left: 6px;
   }
-  .act-btn { background:transparent; border:none; font-size:17px; cursor:pointer; padding:6px 9px; color:var(--muted); }
-  .act-btn:hover { color:var(--text); transform:scale(1.15); }
+  .act-btn {
+    background: transparent; border: none; font-size: 18px; cursor: pointer;
+    padding: 8px 10px; color: var(--muted); min-width: 36px; min-height: 36px;
+  }
+  .act-btn:hover { color: var(--text); transform: scale(1.15); }
   tfoot td {
-    position:sticky; bottom:0; background:var(--panel2); color:var(--text);
-    font-weight:700; font-size:14.5px; text-align:center; padding:13px 8px;
-    border:1px solid var(--border); z-index:9;
+    position: sticky; bottom: 0; background: var(--panel2); color: var(--text);
+    font-weight: 700; font-size: 14px; text-align: center; padding: 12px 8px;
+    border: 1px solid var(--border); z-index: 9;
   }
-  tfoot td.lbl { text-align:right; padding-right:20px; font-size:15px; }
+  tfoot td.lbl { text-align: right; padding-right: 16px; font-size: 14.5px; }
 
-  /* Карточки и итоги */
-  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:22px; }
-  .card { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:16px 18px; }
-  .card .num-big { font-size:28px; font-weight:700; }
-  .card .lbl2 { font-size:13px; color:var(--muted); margin-top:4px; }
-  .card.blue .num-big { color:var(--blue); }
-  .card.green .num-big { color:#3fb950; }
-  .card.red .num-big { color:#ff7b72; }
-  .card.orange .num-big { color:var(--orange); }
-  .card.purple .num-big { color:#d2a8ff; }
+  /* Карточки и статистика */
+  .cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px; margin-bottom: 20px;
+  }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; }
+  .card .num-big { font-size: 26px; font-weight: 700; }
+  .card .lbl2 { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  .card.blue .num-big { color: var(--blue); }
+  .card.green .num-big { color: #3fb950; }
+  .card.red .num-big { color: #ff7b72; }
+  .card.orange .num-big { color: var(--orange); }
+  .card.purple .num-big { color: #d2a8ff; }
   
-  .summary-section { margin-top:24px; }
-  .summary-title { font-size:16px; font-weight:600; color:var(--text); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
-  .sumtable { background:var(--panel); border:1px solid var(--border); border-radius:6px; overflow:hidden; margin-bottom:20px; }
-  .sumtable th { background:var(--panel2); }
-  .sumtable th, .sumtable td { padding:10px 14px; border:1px solid var(--border); font-size:14px; text-align:center; }
-  .hidden { display:none !important; }
+  .summary-section { margin-top: 20px; }
+  .summary-title {
+    font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+  }
+  .sumtable { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow-x: auto; margin-bottom: 18px; }
+  .sumtable table { min-width: 100%; }
+  .sumtable th { background: var(--panel2); font-size: 13px; }
+  .sumtable th, .sumtable td { padding: 9px 12px; border: 1px solid var(--border); font-size: 13.5px; text-align: center; }
+  .hidden { display: none !important; }
 
   /* Стили вкладки Планы */
-  .plan-row-urgent td { background:rgba(240,136,62,.04); }
-  .plan-row-done td { opacity:0.65; }
-  .plan-row-done input[type="text"] { text-decoration:line-through; color:var(--muted); }
-  .row-seq { text-align:center; font-weight:700; color:var(--muted); width:46px; }
+  .plan-row-urgent td { background: rgba(240,136,62,.04); }
+  .plan-row-done td { opacity: 0.65; }
+  .plan-row-done input[type="text"] { text-decoration: line-through; color: var(--muted); }
+  .row-seq { text-align: center; font-weight: 700; color: var(--muted); width: 44px; }
 
   /* Кнопки действий */
-  .toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:22px; }
-  .btn {
-    border:1px solid var(--border); border-radius:6px; padding:10px 18px;
-    font-size:14px; font-weight:600; color:var(--text); cursor:pointer;
-    background:var(--panel2);
+  .toolbar {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 16px;
   }
-  .btn:hover { filter:brightness(1.15); }
-  .btn-add   { background:var(--green);  border-color:var(--green); }
-  .btn-html  { background:var(--purple); border-color:var(--purple); }
-  .btn-excel { background:var(--green2); border-color:var(--green2); }
-  .btn-clear:hover { color:#ff7b72; border-color:var(--red); }
+  .btn {
+    border: 1px solid var(--border); border-radius: 6px; padding: 10px 16px;
+    font-size: 13.5px; font-weight: 600; color: var(--text); cursor: pointer;
+    background: var(--panel2); min-height: 42px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .btn:hover { filter: brightness(1.15); }
+  .btn-add   { background: var(--green);  border-color: var(--green); }
+  .btn-html  { background: var(--purple); border-color: var(--purple); }
+  .btn-excel { background: var(--green2); border-color: var(--green2); }
+  .btn-clear:hover { color: #ff7b72; border-color: var(--red); }
+
+  /* Подсказка о горизонтальном скролле */
+  .scroll-hint {
+    display: none; font-size: 12px; color: var(--muted); text-align: right;
+    margin-bottom: 6px; align-items: center; justify-content: flex-end; gap: 4px;
+  }
 
   /* Lightbox */
   .lightbox {
-    position:fixed; inset:0; background:rgba(1,4,9,.92);
-    display:none; flex-direction:column; z-index:100;
+    position: fixed; inset: 0; background: rgba(1,4,9,.94);
+    display: none; flex-direction: column; z-index: 100;
   }
-  .lightbox.open { display:flex; }
-  .lb-top { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; }
+  .lightbox.open { display: flex; }
+  .lb-top { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
   .lb-btn {
-    background:var(--panel2); border:1px solid var(--border); border-radius:6px;
-    color:var(--text); padding:8px 16px; font-size:14px; cursor:pointer;
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 8px 14px; font-size: 13.5px; cursor: pointer; min-height: 40px;
   }
-  .lb-btn:hover { border-color:var(--blue); color:var(--blue); }
-  .lb-counter { color:var(--muted); font-size:14px; }
-  .lb-body { flex:1; display:flex; align-items:center; justify-content:center; gap:14px; padding:0 14px; min-height:0; }
-  .lb-body img { max-width:76vw; max-height:66vh; border-radius:8px; border:1px solid var(--border); box-shadow:0 8px 40px rgba(0,0,0,.7); }
+  .lb-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .lb-counter { color: var(--muted); font-size: 13px; }
+  .lb-body { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 10px; min-height: 0; }
+  .lb-body img { max-width: 90vw; max-height: 70vh; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 8px 40px rgba(0,0,0,.7); }
   .lb-nav {
-    background:var(--panel2); border:1px solid var(--border); border-radius:50%;
-    width:48px; height:48px; font-size:26px; color:var(--text); cursor:pointer; flex-shrink:0;
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 50%;
+    width: 44px; height: 44px; font-size: 24px; color: var(--text); cursor: pointer; flex-shrink: 0;
   }
-  .lb-nav:hover { border-color:var(--blue); color:var(--blue); }
-  .lb-nav:disabled { opacity:.3; cursor:default; }
-  .lb-caption { text-align:center; color:var(--muted); font-size:14px; padding:14px 18px 18px; }
+  .lb-nav:disabled { opacity: .3; cursor: default; }
+  .lb-caption { text-align: center; color: var(--muted); font-size: 13px; padding: 12px 16px; }
 
   /* Модальное окно установки */
   .modal-overlay {
-    position:fixed; inset:0; background:rgba(1,4,9,.85);
-    display:none; align-items:center; justify-content:center; z-index:200; padding:20px;
+    position: fixed; inset: 0; background: rgba(1,4,9,.85);
+    display: none; align-items: center; justify-content: center; z-index: 200; padding: 16px;
   }
-  .modal-overlay.open { display:flex; }
+  .modal-overlay.open { display: flex; }
   .modal-card {
-    background:var(--panel); border:1px solid var(--border); border-radius:10px;
-    max-width:480px; width:100%; padding:24px; box-shadow:0 12px 40px rgba(0,0,0,.8);
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    max-width: 480px; width: 100%; padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.8);
   }
-  .modal-card h3 { font-size:18px; margin-bottom:12px; color:var(--text); }
-  .modal-card p { font-size:14px; color:var(--muted); line-height:1.6; margin-bottom:14px; }
-  .modal-card ol { margin-left:20px; font-size:14px; color:var(--text); line-height:1.7; margin-bottom:18px; }
+  .modal-card h3 { font-size: 17px; margin-bottom: 10px; color: var(--text); }
+  .modal-card p { font-size: 13.5px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+  .modal-card ol { margin-left: 18px; font-size: 13.5px; color: var(--text); line-height: 1.6; margin-bottom: 16px; }
   .modal-close {
-    background:var(--panel2); border:1px solid var(--border); color:var(--text);
-    padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer; width:100%;
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; min-height: 44px;
   }
 
-  ::-webkit-scrollbar { width:10px; height:10px; }
-  ::-webkit-scrollbar-thumb { background:var(--panel2); border-radius:6px; }
-  ::-webkit-scrollbar-track { background:var(--bg); }
+  /* =========================================================
+     АДАПТИВНОСТЬ ПОД МОБИЛЬНЫЕ УСТРОЙСТВА (<= 768px)
+     ========================================================= */
+  @media (max-width: 768px) {
+    /* Предотвращение зума на iOS при фокусе инпутов */
+    input[type="date"], input[type="text"], input[type="number"], select {
+      font-size: 16px !important;
+    }
+
+    .page { padding: 0 8px; }
+
+    /* Навбар */
+    .navbar { padding: 8px 10px; }
+    .brand { font-size: 13px; }
+    .btn-install { width: 100%; order: 3; margin-top: 6px; justify-content: center; }
+    .dbinfo { font-size: 11px; }
+
+    /* Поиск */
+    .searchbar { flex-direction: column; align-items: stretch; padding: 8px 10px; }
+    .searchbox { width: 100%; min-width: 100%; }
+    .btn-reset { width: 100%; text-align: center; }
+
+    /* Подсказка свайпа */
+    .scroll-hint { display: flex; }
+
+    /* Панель кнопок (Toolbar) */
+    .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .toolbar .btn { width: 100%; padding: 10px 6px; font-size: 13px; text-align: center; }
+    .toolbar span[style*="flex:1"] { display: none; }
+
+    /* Карточки итогов */
+    .cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .card { padding: 10px 12px; }
+    .card .num-big { font-size: 22px; }
+    .card .lbl2 { font-size: 11.5px; }
+
+    /* Лайтбокс на телефонах */
+    .lb-body img { max-width: 86vw; max-height: 65vh; }
+    .lb-nav { width: 38px; height: 38px; font-size: 20px; }
+  }
+
+  @media (max-width: 480px) {
+    .brand .who { display: inline-block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+    .toolbar { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
 
 <header class="navbar">
-  <svg class="burger" height="22" width="22" viewBox="0 0 16 16"><path d="M1 2.75A.75.75 0 0 1 1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75Zm0 5A.75.75 0 0 1 1.75 7h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 7.75ZM1.75 12h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5Z"/></svg>
-  <svg height="28" width="28" viewBox="0 0 16 16"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
-  <span class="brand"><span class="who">Гидравлика Сервис</span><span class="slash">/</span><span class="repo">отслеживание-оплаты</span></span>
-  <span class="tag-public">Public</span>
-
-  <!-- Кнопка Установить (всегда видна в Navbar) -->
-  <button class="btn-install" id="btnInstall">📲 Установить на экран</button>
-
-  <span class="spacer"></span>
-  <div class="dbinfo">
-    <span class="save-indicator saved" id="saveIndicator">✓ БД сохранена</span>
-    <span id="dbinfoText">💾 IndexedDB</span>
+  <div class="nav-left">
+    <svg class="burger" height="20" width="20" viewBox="0 0 16 16"><path d="M1 2.75A.75.75 0 0 1 1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75Zm0 5A.75.75 0 0 1 1.75 7h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 7.75ZM1.75 12h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5Z"/></svg>
+    <svg height="24" width="24" viewBox="0 0 16 16"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
+    <span class="brand"><span class="who">Гидравлика Сервис</span><span class="slash">/</span><span class="repo">отслеживание</span></span>
   </div>
+
+  <div class="nav-right">
+    <div class="dbinfo">
+      <span class="save-indicator saved" id="saveIndicator">✓ Сохранено</span>
+      <span id="dbinfoText" style="display:none;">💾</span>
+    </div>
+  </div>
+
+  <!-- Кнопка Установить (на мобильных становится аккуратной и удобной) -->
+  <button class="btn-install" id="btnInstall">📲 Установить на экран</button>
 </header>
 
 <div class="page">
@@ -265,71 +344,76 @@
   </nav>
 
   <div class="banner">
-    <div>⚡ База данных <strong>IndexedDB</strong>: автосохранение работает каждые <strong>0,5 секунды</strong> при любых изменениях (заказы, часы, фото актов).</div>
-    <div style="font-size:12px;opacity:0.85;white-space:nowrap;margin-left:14px;">Автосинхронизация 500 мс</div>
+    <div>⚡ База данных <strong>IndexedDB</strong>: автосохранение работает каждые <strong>0,5 сек</strong>.</div>
+    <div style="font-size:11.5px;opacity:0.85;">Автономная работа офлайн</div>
   </div>
 
-  <!-- Поиск без иконки лупы -->
+  <!-- Поиск -->
   <div class="searchbar" id="searchbar">
     <div class="searchbox"><input type="text" id="searchNum" placeholder="Поиск по № заказа…" autocomplete="off"></div>
     <div class="searchbox"><input type="text" id="searchClient" placeholder="Поиск по клиенту…" autocomplete="off"></div>
     <span class="search-count" id="searchCount"></span>
-    <span style="flex:1"></span>
     <button class="btn-reset" id="btnReset">✕ Сбросить фильтр</button>
   </div>
 
   <!-- Вкладка: Заказы -->
   <div id="view-orders">
-    <table>
-      <thead>
-        <tr class="head1">
-          <th rowspan="2" class="sortable" id="thSortDate" title="Нажмите для сортировки по дате">Дата <span id="sortDateIcon">▲</span></th>
-          <th rowspan="2">№ заказа</th>
-          <th rowspan="2">Клиент</th>
-          <th colspan="6" class="hours-group">Количество часов</th>
-          <th rowspan="2">Хозяйство<br>оплатило</th>
-          <th rowspan="2">Начислено</th>
-          <th rowspan="2">Фото акта</th>
-          <th rowspan="2">Действия</th>
-        </tr>
-        <tr class="head2" id="empHead"></tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-      <tfoot>
-        <tr>
-          <td class="lbl" colspan="3" id="totLabel">Общий итог часов:</td>
-          <td id="tot-bragin">0</td><td id="tot-bystrov">0</td><td id="tot-veprev">0</td>
-          <td id="tot-zuykov">0</td><td id="tot-kovrizhnykh">0</td><td id="tot-plyusnin">0</td>
-          <td colspan="4" id="tot-sum">Всего: 0 ч.</td>
-        </tr>
-      </tfoot>
-    </table>
+    <div class="scroll-hint"><span>↔ Листайте таблицу вправо</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr class="head1">
+            <th rowspan="2" class="sortable" id="thSortDate" title="Нажмите для сортировки по дате">Дата <span id="sortDateIcon">▲</span></th>
+            <th rowspan="2">№ заказа</th>
+            <th rowspan="2">Клиент</th>
+            <th colspan="6" class="hours-group">Количество часов</th>
+            <th rowspan="2">Хозяйство<br>оплатило</th>
+            <th rowspan="2">Начислено</th>
+            <th rowspan="2">Фото акта</th>
+            <th rowspan="2">Действия</th>
+          </tr>
+          <tr class="head2" id="empHead"></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+        <tfoot>
+          <tr>
+            <td class="lbl" colspan="3" id="totLabel">Общий итог часов:</td>
+            <td id="tot-bragin">0</td><td id="tot-bystrov">0</td><td id="tot-veprev">0</td>
+            <td id="tot-zuykov">0</td><td id="tot-kovrizhnykh">0</td><td id="tot-plyusnin">0</td>
+            <td colspan="4" id="tot-sum">Всего: 0 ч.</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
 
     <div class="toolbar">
       <button class="btn btn-add" id="btnAdd">+ Добавить заказ</button>
       <button class="btn btn-clear" id="btnClear">🗑 Очистить всё</button>
       <span style="flex:1"></span>
-      <button class="btn btn-html" id="btnHtml">⬇ Скачать отчет с фото (HTML)</button>
+      <button class="btn btn-html" id="btnHtml">⬇ Скачать HTML</button>
       <button class="btn btn-excel" id="btnExcel">📊 Скачать Excel (.xlsx)</button>
     </div>
   </div>
 
   <!-- Вкладка: Планы -->
   <div id="view-plans" class="hidden">
-    <table>
-      <thead>
-        <tr class="head1">
-          <th style="width:50px">№</th>
-          <th style="width:170px">Срок / Дата</th>
-          <th>Описание задачи / Плана</th>
-          <th style="width:180px">Ответственный</th>
-          <th style="width:150px">Приоритет</th>
-          <th style="width:150px">Выполнение</th>
-          <th style="width:90px">Действия</th>
-        </tr>
-      </thead>
-      <tbody id="tbodyPlans"></tbody>
-    </table>
+    <div class="scroll-hint"><span>↔ Листайте таблицу вправо</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr class="head1">
+            <th style="width:46px">№</th>
+            <th style="width:160px">Срок / Дата</th>
+            <th>Описание задачи / Плана</th>
+            <th style="width:170px">Ответственный</th>
+            <th style="width:140px">Приоритет</th>
+            <th style="width:140px">Выполнение</th>
+            <th style="width:90px">Действия</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyPlans"></tbody>
+      </table>
+    </div>
 
     <div class="toolbar">
       <button class="btn btn-add" id="btnAddPlan">+ Добавить план</button>
@@ -344,7 +428,7 @@
     <div class="summary-section">
       <div class="summary-title">
         <span>📅 Итоги по месяцам</span>
-        <button class="btn-reset" id="btnToggleMonthSort" style="padding:4px 10px;font-size:12px;">Сортировка: <span id="lblMonthSort">По убыванию (сначала новые) ▼</span></button>
+        <button class="btn-reset" id="btnToggleMonthSort" style="padding:4px 10px;font-size:12px;min-height:32px;">Сортировка: <span id="lblMonthSort">По убыванию ▼</span></button>
       </div>
       <div class="sumtable"><table>
         <thead>
@@ -378,7 +462,7 @@
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox">
   <div class="lb-top">
-    <button class="lb-btn" id="lbBack">← Назад к таблице</button>
+    <button class="lb-btn" id="lbBack">← Назад</button>
     <span class="lb-counter" id="lbCounter"></span>
     <button class="lb-btn" id="lbClose">✕ Закрыть</button>
   </div>
@@ -390,15 +474,15 @@
   <div class="lb-caption" id="lbCaption"></div>
 </div>
 
-<!-- Модальное окно установки для телефонов/ПК -->
+<!-- Модальное окно установки PWA -->
 <div class="modal-overlay" id="modalInstall">
   <div class="modal-card">
-    <h3>📲 Установка приложения</h3>
-    <p>Вы можете установить «Гидравлика Сервис» как полноценное приложение на ваш компьютер или телефон:</p>
+    <h3>📲 Установка на экран</h3>
+    <p>Вы можете установить «Гидравлика Сервис» как полноценное приложение на смартфон или компьютер:</p>
     <ol>
-      <li><strong>На компьютере (Chrome / Edge / Яндекс):</strong> в адресной строке браузера справа нажмите на значок «Установить» (монитор со стрелкой) или подтвердите запрос на установку.</li>
-      <li><strong>На телефоне Android:</strong> нажмите меню браузера (три точки) → выберите <strong>«Установить приложение»</strong> или <strong>«Добавить на главный экран»</strong>.</li>
-      <li><strong>На iPhone / iPad (Safari):</strong> внизу экрана нажмите кнопку <strong>«Поделиться»</strong> (квадрат со стрелкой вверх) → выберите <strong>«На экран „Домой“»</strong>.</li>
+      <li><strong>На Android:</strong> нажмите меню браузера (три точки вверху) → <strong>«Установить приложение»</strong> или <strong>«Добавить на главный экран»</strong>.</li>
+      <li><strong>На iPhone / iPad (Safari):</strong> нажмите кнопку <strong>«Поделиться»</strong> (квадрат со стрелкой вверх внизу экрана) → выберите <strong>«На экран „Домой“»</strong>.</li>
+      <li><strong>На компьютере (Chrome/Edge/Яндекс):</strong> нажмите на значок «Установить» в адресной строке справа.</li>
     </ol>
     <button class="modal-close" id="modalClose">Понятно, закрыть</button>
   </div>
@@ -531,18 +615,18 @@ function updateSaveIndicator(status){
   if(!el) return;
   if(status === 'saving'){
     el.className = 'save-indicator saving';
-    el.textContent = '⏳ Сохранение (0.5с)...';
+    el.textContent = '⏳ Сохранение...';
   } else {
     el.className = 'save-indicator saved';
     const timeStr = lastSavedTimestamp ? lastSavedTimestamp.toLocaleTimeString('ru-RU') : '';
-    el.textContent = '✓ БД сохранена ' + timeStr;
+    el.textContent = '✓ Сохранено ' + timeStr;
   }
 }
 
 function updateDbCounter(){
   const dbText = document.getElementById('dbinfoText');
   if(dbText){
-    dbText.textContent = '💾 БД • ' + orders.length + ' зак. • ' + plans.length + ' план.';
+    dbText.textContent = '💾 ' + orders.length + ' зак. / ' + plans.length + ' план.';
   }
 }
 
@@ -786,7 +870,7 @@ function renderSummary(){
   });
 
   document.getElementById('sumMonthsBody').innerHTML = monthsHtml || '<tr><td colspan="6" style="color:var(--muted)">Нет данных</td></tr>';
-  document.getElementById('lblMonthSort').textContent = monthSortOrder === 'asc' ? 'По возрастанию (старые) ▲' : 'По убыванию (новые) ▼';
+  document.getElementById('lblMonthSort').textContent = monthSortOrder === 'asc' ? 'По возрастанию ▲' : 'По убыванию ▼';
 
   document.getElementById('sumBody').innerHTML = EMPLOYEES.map(function(e){
     const share = sum>0 ? Math.round(tot[e[0]]/sum*1000)/10 : 0;
@@ -1050,11 +1134,10 @@ document.getElementById('btnHtml').addEventListener('click', function(){
 
 /* =========================================================
    ЭКСПОРТ В EXCEL: SheetJS + надежный HTML-Excel fallback
-   Гарантированно работает в любых условиях!
+   Гарантированно работает на ПК и телефонах!
    ========================================================= */
 document.getElementById('btnExcel').addEventListener('click', function(){
   try{
-    // Вариант 1: через SheetJS (XLSX) если скрипт доступен
     if(typeof XLSX !== 'undefined'){
       const wb = XLSX.utils.book_new();
       const st = function(v){ return v==='yes'?'Да':v==='no'?'Нет':'—'; };
@@ -1085,10 +1168,10 @@ document.getElementById('btnExcel').addEventListener('click', function(){
       return;
     }
   }catch(err){
-    console.warn('SheetJS не сработал, переключаемся на прямой экспорт HTML-Excel:', err);
+    console.warn('SheetJS не сработал, переключаемся на HTML-Excel fallback:', err);
   }
 
-  // Вариант 2 (Автономный Fallback): Создание нативного XML/HTML Excel файла
+  // Fallback вариант без сторонних библиотек
   try {
     const st = function(v){ return v==='yes'?'Да':v==='no'?'Нет':'—'; };
     let tableHtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
@@ -1110,7 +1193,7 @@ document.getElementById('btnExcel').addEventListener('click', function(){
     });
     tableHtml += '</tbody></table></body></html>';
 
-    const blob = new Blob(['﻿' + tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const blob = new Blob(['\ufeff' + tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'Отчет_Гидравлика_Сервис.xls';
@@ -1128,7 +1211,6 @@ const installBtn = document.getElementById('btnInstall');
 const modalInstall = document.getElementById('modalInstall');
 const modalClose = document.getElementById('modalClose');
 
-// Слушаем системное событие готовности к установке
 window.addEventListener('beforeinstallprompt', function(e){
   e.preventDefault();
   deferredPrompt = e;
@@ -1149,7 +1231,6 @@ if(installBtn){
         deferredPrompt = null;
       });
     } else {
-      // Если браузер не поддерживает автоматический prompt (iOS Safari или браузер без поддержки), открываем модальную подсказку
       modalInstall.classList.add('open');
     }
   });
@@ -1166,14 +1247,14 @@ modalInstall.addEventListener('click', function(e){
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){
     navigator.serviceWorker.register('./sw.js').then(function(reg){
-      console.log('SW зарегистрирован успешно:', reg.scope);
+      console.log('SW зарегистрирован:', reg.scope);
     }).catch(function(err){
       console.log('SW ошибка:', err);
     });
   });
 }
 
-/* Запуск приложения */
+/* Запуск */
 document.getElementById('empHead').innerHTML = EMPLOYEES.map(function(e){ return '<th>' + e[1] + '</th>'; }).join('');
 initData();
 </script>
