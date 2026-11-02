@@ -488,4 +488,174 @@ function renderPlans(){
       <td><select data-plan-id="${p.id}" data-plan-field="emp"><option value="">(Не назначен)</option>${EMPLOYEES.map(e=>`<option value="${e[0]}" ${p.emp===e[0]?'selected':''}>${e[1]}</option>`).join('')}</select></td>
       <td><button class="pill ${p.priority==='urgent'?'urgent':'normal'}" data-act="togglePriority" data-plan-id="${p.id}">${p.priority==='urgent'?'🔥 Важное':'⚪ Обычное'}</button></td>
       <td><button class="pill ${p.done?'done':'todo'}" data-act="toggleDone" data-plan-id="${p.id}">${p.done?'✓ Выполнено':'⏳ В работе'}</button></td>
-      <td style="
+      <td style="text-align:center"><button class="act-btn" data-act="delPlan" data-plan-id="${p.id}">🗑</button></td>
+    </tr>`;
+  });
+  document.getElementById('tbodyPlans').innerHTML = html || '<tr><td colspan="7" style="text-align:center;padding:24px;">Нет планов</td></tr>';
+  document.getElementById('plansBadge').textContent = plans.filter(p=>!p.done).length;
+}
+
+function renderSummary(){
+  let sum = 0;
+  const tot = {};
+  EMPLOYEES.forEach(e => tot[e[0]]=0);
+  orders.forEach(o => EMPLOYEES.forEach(e => {
+    const h = parseFloat(o.hours[e[0]])||0;
+    tot[e[0]] += h;
+    sum += h;
+  }));
+
+  document.getElementById('cards').innerHTML = `
+    <div class="card blue"><div class="num-big">${orders.length}</div><div class="lbl2">Всего заказов</div></div>
+    <div class="card green"><div class="num-big">${orders.filter(o=>o.paid==='yes').length}</div><div class="lbl2">Оплачено</div></div>
+    <div class="card red"><div class="num-big">${orders.filter(o=>o.accrued==='yes').length}</div><div class="lbl2">Начислено</div></div>
+    <div class="card"><div class="num-big">${sum} ч.</div><div class="lbl2">Сумма часов</div></div>
+  `;
+
+  document.getElementById('sumBody').innerHTML = EMPLOYEES.map(e => {
+    const share = sum>0 ? Math.round(tot[e[0]]/sum*100) : 0;
+    return `<tr><td>${e[1]}</td><td>${tot[e[0]]}</td><td>${share}%</td></tr>`;
+  }).join('');
+}
+
+function renderAll(){
+  renderOrders();
+  renderPlans();
+  renderSummary();
+}
+
+/* Обработчики ввода */
+document.getElementById('tbody').addEventListener('input', e => {
+  const el = e.target, id = el.dataset.id;
+  const o = orders.find(x => x.id === id);
+  if(!o) return;
+  if(el.dataset.field === 'hours'){ o.hours[el.dataset.emp] = parseFloat(el.value)||0; renderSummary(); }
+  else if(el.dataset.field === 'num'){ o.num = el.value; }
+  else if(el.dataset.field === 'client'){ o.client = el.value; }
+  triggerSync();
+});
+
+document.getElementById('tbody').addEventListener('change', e => {
+  const el = e.target, id = el.dataset.id;
+  const o = orders.find(x => x.id === id);
+  if(o && el.dataset.field === 'date'){ o.date = el.value; triggerSync(); renderOrders(); }
+});
+
+document.getElementById('tbody').addEventListener('click', e => {
+  const btn = e.target.closest('[data-act]');
+  if(!btn) return;
+  const act = btn.dataset.act, id = btn.dataset.id;
+  const o = orders.find(x => x.id === id);
+  if(act === 'status'){ o[btn.dataset.field] = o[btn.dataset.field]==='yes'?'no':'yes'; triggerSync(); renderOrders(); }
+  else if(act === 'photo'){ photoTargetId = id; document.getElementById('fileInput').click(); }
+  else if(act === 'view'){ document.getElementById('lbImg').src = o.photo; document.getElementById('lightbox').classList.add('open'); }
+  else if(act === 'del'){ orders = orders.filter(x => x.id !== id); triggerSync(); renderOrders(); }
+});
+
+document.getElementById('tbodyPlans').addEventListener('input', e => {
+  const el = e.target, id = el.dataset.planId;
+  const p = plans.find(x => x.id === id);
+  if(p && el.dataset.planField === 'task'){ p.task = el.value; triggerSync(); }
+});
+
+document.getElementById('tbodyPlans').addEventListener('change', e => {
+  const el = e.target, id = el.dataset.planId;
+  const p = plans.find(x => x.id === id);
+  if(p){
+    if(el.dataset.planField === 'date') p.date = el.value;
+    else if(el.dataset.planField === 'emp') p.emp = el.value;
+    triggerSync();
+  }
+});
+
+document.getElementById('tbodyPlans').addEventListener('click', e => {
+  const btn = e.target.closest('[data-act]');
+  if(!btn) return;
+  const act = btn.dataset.act, id = btn.dataset.planId;
+  const p = plans.find(x => x.id === id);
+  if(act === 'togglePriority'){ p.priority = p.priority==='urgent'?'normal':'urgent'; triggerSync(); renderPlans(); }
+  else if(act === 'toggleDone'){ p.done = !p.done; triggerSync(); renderPlans(); }
+  else if(act === 'delPlan'){ plans = plans.filter(x => x.id !== id); triggerSync(); renderPlans(); }
+});
+
+// Кнопки тулбара
+document.getElementById('btnAdd').addEventListener('click', () => {
+  orders.push({id:uid(), date:todayISO(), num:'', client:'Клиент', hours:emptyHours(), paid:'no', accrued:'no', photo:null});
+  triggerSync(); renderOrders();
+});
+document.getElementById('btnClear').addEventListener('click', () => {
+  if(confirm('Удалить все заказы?')){ orders=[]; triggerSync(); renderOrders(); }
+});
+document.getElementById('btnAddPlan').addEventListener('click', () => {
+  plans.push({ id:uid(), date:todayISO(), task:'', emp:'', priority:'normal', done:false });
+  triggerSync(); renderPlans();
+});
+document.getElementById('btnClearPlans').addEventListener('click', () => {
+  if(confirm('Удалить все планы?')){ plans=[]; triggerSync(); renderPlans(); }
+});
+
+// Поиск и вкладки
+document.getElementById('searchNum').addEventListener('input', e => { search.num = e.target.value.trim().toLowerCase(); renderOrders(); });
+document.getElementById('searchClient').addEventListener('input', e => { search.client = e.target.value.trim().toLowerCase(); renderOrders(); });
+document.getElementById('btnReset').addEventListener('click', () => {
+  search.num=''; search.client='';
+  document.getElementById('searchNum').value='';
+  document.getElementById('searchClient').value='';
+  renderOrders();
+});
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x===t));
+    const v = t.dataset.view;
+    document.getElementById('view-orders').classList.toggle('hidden', v!=='orders');
+    document.getElementById('view-plans').classList.toggle('hidden', v!=='plans');
+    document.getElementById('view-summary').classList.toggle('hidden', v!=='summary');
+  });
+});
+
+// Сжатие фото
+document.getElementById('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file || !photoTargetId) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 800;
+      let w = img.width, h = img.height;
+      if(w > max || h > max){ const k = max/Math.max(w,h); w = Math.round(w*k); h = Math.round(h*k); }
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      const o = orders.find(x => x.id === photoTargetId);
+      if(o){
+        o.photo = c.toDataURL('image/jpeg', 0.75);
+        triggerSync();
+        renderOrders();
+      }
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById('lbClose').addEventListener('click', () => { document.getElementById('lightbox').classList.remove('open'); });
+
+// Экспорт Excel
+document.getElementById('btnExcel').addEventListener('click', () => {
+  try {
+    const wb = XLSX.utils.book_new();
+    const ordersData = [['Дата', '№ заказа', 'Клиент', ...EMPLOYEES.map(e=>e[1]), 'Хозяйство оплатило', 'Начислено']];
+    orders.forEach(o => {
+      ordersData.push([fmtDate(o.date), o.num, o.client, ...EMPLOYEES.map(e=>o.hours[e[0]]||0), o.paid==='yes'?'Да':'Нет', o.accrued==='yes'?'Да':'Нет']);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ordersData), 'Заказы');
+    XLSX.writeFile(wb, 'Гидравлика_Сервис.xlsx');
+  } catch(e) { alert('Ошибка экспорта: ' + e.message); }
+});
+
+/* Запуск */
+document.getElementById('empHead').innerHTML = EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('');
+startCloudListener();
+</script>
+</body>
+</html>
