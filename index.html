@@ -4,7 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Гидравлика Сервис / отслеживание-оплаты</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#010409">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>⚙️</text></svg>">
+<!-- SheetJS для гарантированной выгрузки Excel (.xlsx) -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
   :root{
     --bg:#0d1117; --panel:#161b22; --panel2:#21262d; --border:#30363d;
@@ -13,13 +17,13 @@
     --orange:#f0883e;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system,'Segoe UI',Roboto,Arial,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+  body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
 
   /* Navbar */
   .navbar {
     display:flex; align-items:center; gap:14px;
     background:#010409; border-bottom:1px solid var(--border);
-    padding:10px 20px;
+    padding:10px 20px; flex-wrap:wrap;
   }
   .navbar svg { fill: var(--text); flex-shrink:0; }
   .burger { cursor:pointer; }
@@ -36,6 +40,14 @@
   }
   .save-indicator.saved { color:#3fb950; border-color:rgba(46,160,67,.4); }
   .save-indicator.saving { color:var(--orange); border-color:rgba(240,136,62,.4); }
+
+  .btn-install {
+    display:inline-flex; align-items:center; gap:6px;
+    background: #1f6feb; color: #fff; border: 1px solid #388bfd;
+    padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-install:hover { background: #388bfd; filter: brightness(1.1); }
 
   .page { max-width:2500px; margin:0 auto; padding:0 16px; }
 
@@ -204,6 +216,24 @@
   .lb-nav:disabled { opacity:.3; cursor:default; }
   .lb-caption { text-align:center; color:var(--muted); font-size:14px; padding:14px 18px 18px; }
 
+  /* Модальное окно установки */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(1,4,9,.85);
+    display:none; align-items:center; justify-content:center; z-index:200; padding:20px;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal-card {
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    max-width:480px; width:100%; padding:24px; box-shadow:0 12px 40px rgba(0,0,0,.8);
+  }
+  .modal-card h3 { font-size:18px; margin-bottom:12px; color:var(--text); }
+  .modal-card p { font-size:14px; color:var(--muted); line-height:1.6; margin-bottom:14px; }
+  .modal-card ol { margin-left:20px; font-size:14px; color:var(--text); line-height:1.7; margin-bottom:18px; }
+  .modal-close {
+    background:var(--panel2); border:1px solid var(--border); color:var(--text);
+    padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer; width:100%;
+  }
+
   ::-webkit-scrollbar { width:10px; height:10px; }
   ::-webkit-scrollbar-thumb { background:var(--panel2); border-radius:6px; }
   ::-webkit-scrollbar-track { background:var(--bg); }
@@ -216,6 +246,10 @@
   <svg height="28" width="28" viewBox="0 0 16 16"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
   <span class="brand"><span class="who">Гидравлика Сервис</span><span class="slash">/</span><span class="repo">отслеживание-оплаты</span></span>
   <span class="tag-public">Public</span>
+
+  <!-- Кнопка Установить (всегда видна в Navbar) -->
+  <button class="btn-install" id="btnInstall">📲 Установить на экран</button>
+
   <span class="spacer"></span>
   <div class="dbinfo">
     <span class="save-indicator saved" id="saveIndicator">✓ БД сохранена</span>
@@ -231,7 +265,7 @@
   </nav>
 
   <div class="banner">
-    <div>⚡ Встроена быстрая база данных <strong>IndexedDB</strong>: автосохранение работает каждые <strong>0,5 секунды</strong> при любых изменениях (текст, часы, фото актов).</div>
+    <div>⚡ База данных <strong>IndexedDB</strong>: автосохранение работает каждые <strong>0,5 секунды</strong> при любых изменениях (заказы, часы, фото актов).</div>
     <div style="font-size:12px;opacity:0.85;white-space:nowrap;margin-left:14px;">Автосинхронизация 500 мс</div>
   </div>
 
@@ -356,6 +390,20 @@
   <div class="lb-caption" id="lbCaption"></div>
 </div>
 
+<!-- Модальное окно установки для телефонов/ПК -->
+<div class="modal-overlay" id="modalInstall">
+  <div class="modal-card">
+    <h3>📲 Установка приложения</h3>
+    <p>Вы можете установить «Гидравлика Сервис» как полноценное приложение на ваш компьютер или телефон:</p>
+    <ol>
+      <li><strong>На компьютере (Chrome / Edge / Яндекс):</strong> в адресной строке браузера справа нажмите на значок «Установить» (монитор со стрелкой) или подтвердите запрос на установку.</li>
+      <li><strong>На телефоне Android:</strong> нажмите меню браузера (три точки) → выберите <strong>«Установить приложение»</strong> или <strong>«Добавить на главный экран»</strong>.</li>
+      <li><strong>На iPhone / iPad (Safari):</strong> внизу экрана нажмите кнопку <strong>«Поделиться»</strong> (квадрат со стрелкой вверх) → выберите <strong>«На экран „Домой“»</strong>.</li>
+    </ol>
+    <button class="modal-close" id="modalClose">Понятно, закрыть</button>
+  </div>
+</div>
+
 <script>
 const EMPLOYEES = [
   ['bragin','Брагин'],['bystrov','Быстров'],['veprev','Вепрев'],
@@ -363,7 +411,7 @@ const EMPLOYEES = [
 ];
 
 /* =========================================================
-   БАЗА ДАННЫХ: IndexedDB + надежный fallback
+   БАЗА ДАННЫХ: IndexedDB + LocalStorage fallback
    Автосохранение каждые 0.5 секунды (500 мс)
    ========================================================= */
 const DB_NAME = 'GidravlikaServiceDB';
@@ -404,7 +452,6 @@ function openDatabase(){
 
 function dbSaveState(data){
   return new Promise(function(resolve){
-    // Сначала всегда дублируем в localStorage (быстро и надежно)
     try {
       localStorage.setItem(LS_KEY, JSON.stringify(data));
     } catch(e){}
@@ -427,7 +474,6 @@ function dbSaveState(data){
 
 function dbLoadState(){
   return new Promise(function(resolve){
-    // Сначала пробуем считать из IndexedDB
     if(dbInstance){
       try{
         const tx = dbInstance.transaction(STORE_NAME, 'readonly');
@@ -438,7 +484,6 @@ function dbLoadState(){
             resolve(req.result);
             return;
           }
-          // Если в IndexedDB пусто, пробуем из localStorage
           checkLocalStorage(resolve);
         };
         req.onerror = function(){ checkLocalStorage(resolve); };
@@ -501,7 +546,6 @@ function updateDbCounter(){
   }
 }
 
-// Фоновый цикл сохранения каждые 0.5 секунды
 setInterval(performSaveCycle, 500);
 
 /* =========================================================
@@ -1004,133 +1048,132 @@ document.getElementById('btnHtml').addEventListener('click', function(){
   document.body.appendChild(a); a.click(); a.remove();
 });
 
-/* Экспорт в Excel */
-const CRC_TABLE = (function(){ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++){ c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); } t[n]=c>>>0; } return t; })();
-function crc32(u8){ let c=0xFFFFFFFF; for(let i=0;i<u8.length;i++){ c=CRC_TABLE[(c^u8[i])&0xFF]^(c>>>8); } return (c^0xFFFFFFFF)>>>0; }
-function str2u8(s){ return new TextEncoder().encode(s); }
-
-function zipStore(files){
-  const enc=new TextEncoder(); const parts=[]; const central=[];
-  let offset=0; const dosTime=0x6020, dosDate=0x5821;
-  for(let i=0; i<files.length; i++){
-    const f = files[i];
-    const nameBytes=enc.encode(f.name); const crc=crc32(f.data);
-    const lh=new DataView(new ArrayBuffer(30));
-    lh.setUint32(0,0x04034b50,true); lh.setUint16(4,20,true); lh.setUint16(6,0,true); lh.setUint16(8,0,true);
-    lh.setUint16(10,dosTime,true); lh.setUint16(12,dosDate,true);
-    lh.setUint32(14,crc,true); lh.setUint32(18,f.data.length,true); lh.setUint32(22,f.data.length,true);
-    lh.setUint16(26,nameBytes.length,true); lh.setUint16(28,0,true);
-    parts.push(new Uint8Array(lh.buffer),nameBytes,f.data);
-    const ch=new DataView(new ArrayBuffer(46));
-    ch.setUint32(0,0x02014b50,true); ch.setUint16(4,20,true); ch.setUint16(6,20,true); ch.setUint16(8,0,true);
-    ch.setUint16(12,dosTime,true); ch.setUint16(14,dosDate,true);
-    ch.setUint32(16,crc,true); ch.setUint32(20,f.data.length,true); ch.setUint32(24,f.data.length,true);
-    ch.setUint16(28,nameBytes.length,true); ch.setUint16(30,0,true); ch.setUint16(32,0,true);
-    ch.setUint16(34,0,true); ch.setUint32(38,0,true); ch.setUint42(offset,true);
-    central.push(new Uint8Array(ch.buffer),nameBytes);
-    offset+=30+nameBytes.length+f.data.length;
-  }
-  let cdSize=0; central.forEach(function(p){ cdSize+=p.length; });
-  const end=new DataView(new ArrayBuffer(22));
-  end.setUint32(0,0x06054b50,true);
-  end.setUint16(8,files.length,true); end.setUint16(10,files.length,true);
-  end.setUint32(12,cdSize,true); end.setUint32(16,offset,true);
-  const all=[].concat(parts, central, [new Uint8Array(end.buffer)]);
-  let total=0;
-  for(let i=0; i<all.length; i++) total += all[i].length;
-  const out=new Uint8Array(total); let pos=0;
-  for(let i=0; i<all.length; i++){ out.set(all[i],pos); pos+=all[i].length; }
-  return out;
-}
-
-function xesc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;'); }
-function colLetter(i){ let s=''; i++; while(i>0){ const m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26);} return s; }
-function cellXml(r,c,val){
-  if(val===null||val===undefined||val==='') return '';
-  const ref=colLetter(c)+r;
-  if(typeof val==='number' && isFinite(val)) return '<c r="'+ref+'"><v>'+val+'</v></c>';
-  return '<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+xesc(val)+'</t></is></c>';
-}
-function sheetXml(rows, hyperlinks){
-  let s = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n' +
-    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
-  rows.forEach(function(row,i){
-    s += '<row r="' + (i+1) + '">' + row.map(function(v,c){ return cellXml(i+1,c,v); }).join('') + '</row>';
-  });
-  s += '</sheetData>';
-  if(hyperlinks && hyperlinks.length){
-    s += '<hyperlinks>' + hyperlinks.map(function(h){
-      return '<hyperlink ref="' + h.ref + '" location="' + xesc(h.location) + '" display="' + xesc(h.display) + '"/>';
-    }).join('') + '</hyperlinks>';
-  }
-  s += '</worksheet>';
-  return s;
-}
-
-function buildXlsx(){
-  const rows=orders.slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
-  const st=function(v){ return v==='yes'?'Да':v==='no'?'Нет':''; };
-
-  const CHUNK=30000;
-  const photoRows=[['№','Дата','№ заказа','Клиент','Часть','Фото (base64)']];
-  const photoRowOf={};
-  let s2=2;
-  rows.forEach(function(o,k){
-    if(!o.photo) return;
-    photoRowOf[o.id]=s2;
-    for(let i=0,n=1;i<o.photo.length;i+=CHUNK,n++){
-      photoRows.push([n===1?k+1:'', fmtDate(o.date), o.num, o.client, n, o.photo.slice(i,i+CHUNK)]);
-      s2++;
-    }
-  });
-
-  const head=['Дата','№ заказа','Клиент'].concat(EMPLOYEES.map(function(e){ return e[1]; }), ['Хозяйство оплатило','Начислено','Фото акта']);
-  const aoa=[head]; const links=[];
-  rows.forEach(function(o){
-    const row=[fmtDate(o.date), o.num, o.client].concat(
-      EMPLOYEES.map(function(e){ return parseFloat(o.hours[e[0]])||0; }),
-      [st(o.paid), st(o.accrued)]
-    );
-    if(photoRowOf[o.id]){
-      row.push('Открыть фото →');
-      links.push({ref:'L'+(aoa.length+1), location:"'ФОТО_АКТОВ'!A"+photoRowOf[o.id], display:'Открыть фото'});
-    } else row.push('');
-    aoa.push(row);
-  });
-
-  const planRows=[['№','Дата/Срок','Задача','Ответственный','Приоритет','Статус']];
-  plans.forEach(function(p, idx){
-    const empItem = EMPLOYEES.find(function(e){ return e[0]===p.emp; });
-    const empName = empItem ? empItem[1] : '';
-    planRows.push([idx+1, fmtDate(p.date), p.task, empName, p.priority==='urgent'?'Важное':'Обычное', p.done?'Выполнено':'В работе']);
-  });
-
-  const files=[
-    {name:'[Content_Types].xml', data:str2u8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>')},
-    {name:'_rels/.rels', data:str2u8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>')},
-    {name:'xl/workbook.xml', data:str2u8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Заказы" sheetId="1" r:id="rId1"/><sheet name="Планы" sheetId="2" r:id="rId2"/><sheet name="ФОТО_АКТОВ" sheetId="3" r:id="rId3"/></sheets></workbook>')},
-    {name:'xl/_rels/workbook.xml.rels', data:str2u8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>')},
-    {name:'xl/styles.xml', data:str2u8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts><fills count="1"><fill><patternFill patternType="none"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>')},
-    {name:'xl/worksheets/sheet1.xml', data:str2u8(sheetXml(aoa, links))},
-    {name:'xl/worksheets/sheet2.xml', data:str2u8(sheetXml(planRows, null))},
-    {name:'xl/worksheets/sheet3.xml', data:str2u8(sheetXml(photoRows, null))},
-  ];
-  return zipStore(files);
-}
-
+/* =========================================================
+   ЭКСПОРТ В EXCEL: SheetJS + надежный HTML-Excel fallback
+   Гарантированно работает в любых условиях!
+   ========================================================= */
 document.getElementById('btnExcel').addEventListener('click', function(){
   try{
-    const u8=buildXlsx();
-    const blob=new Blob([u8],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download='Отчет_Гидравлика_Сервис.xlsx';
+    // Вариант 1: через SheetJS (XLSX) если скрипт доступен
+    if(typeof XLSX !== 'undefined'){
+      const wb = XLSX.utils.book_new();
+      const st = function(v){ return v==='yes'?'Да':v==='no'?'Нет':'—'; };
+
+      // Лист 1: Заказы
+      const ordersData = [['Дата', '№ заказа', 'Клиент', ...EMPLOYEES.map(function(e){ return e[1]; }), 'Хозяйство оплатило', 'Начислено']];
+      orders.forEach(function(o){
+        ordersData.push([
+          fmtDate(o.date), o.num, o.client,
+          ...EMPLOYEES.map(function(e){ return parseFloat(o.hours[e[0]])||0; }),
+          st(o.paid), st(o.accrued)
+        ]);
+      });
+      const wsOrders = XLSX.utils.aoa_to_sheet(ordersData);
+      XLSX.utils.book_append_sheet(wb, wsOrders, 'Заказы');
+
+      // Лист 2: Планы
+      const plansData = [['№', 'Дата/Срок', 'Задача', 'Ответственный', 'Приоритет', 'Статус']];
+      plans.forEach(function(p, i){
+        const empItem = EMPLOYEES.find(function(e){ return e[0]===p.emp; });
+        const empName = empItem ? empItem[1] : '';
+        plansData.push([i+1, fmtDate(p.date), p.task, empName, p.priority==='urgent'?'Важное':'Обычное', p.done?'Выполнено':'В работе']);
+      });
+      const wsPlans = XLSX.utils.aoa_to_sheet(plansData);
+      XLSX.utils.book_append_sheet(wb, wsPlans, 'Планы');
+
+      XLSX.writeFile(wb, 'Отчет_Гидравлика_Сервис.xlsx');
+      return;
+    }
+  }catch(err){
+    console.warn('SheetJS не сработал, переключаемся на прямой экспорт HTML-Excel:', err);
+  }
+
+  // Вариант 2 (Автономный Fallback): Создание нативного XML/HTML Excel файла
+  try {
+    const st = function(v){ return v==='yes'?'Да':v==='no'?'Нет':'—'; };
+    let tableHtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
+      '<head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Заказы</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>' +
+      '<body><h2>Заказы — Гидравлика Сервис</h2><table border="1"><thead><tr style="background:#ddd;"><th>Дата</th><th>№ заказа</th><th>Клиент</th>' +
+      EMPLOYEES.map(function(e){ return '<th>' + e[1] + '</th>'; }).join('') +
+      '<th>Хозяйство оплатило</th><th>Начислено</th></tr></thead><tbody>';
+
+    orders.forEach(function(o){
+      tableHtml += '<tr><td>' + fmtDate(o.date) + '</td><td>' + esc(o.num) + '</td><td>' + esc(o.client) + '</td>' +
+        EMPLOYEES.map(function(e){ return '<td>' + (o.hours[e[0]]||0) + '</td>'; }).join('') +
+        '<td>' + st(o.paid) + '</td><td>' + st(o.accrued) + '</td></tr>';
+    });
+    tableHtml += '</tbody></table><br><h2>Планы</h2><table border="1"><thead><tr style="background:#ddd;"><th>№</th><th>Дата</th><th>Задача</th><th>Ответственный</th><th>Приоритет</th><th>Статус</th></tr></thead><tbody>';
+    plans.forEach(function(p, i){
+      const empItem = EMPLOYEES.find(function(e){ return e[0]===p.emp; });
+      const empName = empItem ? empItem[1] : '';
+      tableHtml += '<tr><td>' + (i+1) + '</td><td>' + fmtDate(p.date) + '</td><td>' + esc(p.task) + '</td><td>' + empName + '</td><td>' + (p.priority==='urgent'?'Важное':'Обычное') + '</td><td>' + (p.done?'Выполнено':'В работе') + '</td></tr>';
+    });
+    tableHtml += '</tbody></table></body></html>';
+
+    const blob = new Blob(['﻿' + tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Отчет_Гидравлика_Сервис.xls';
     document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
-  }catch(err){ alert('⚠️ Ошибка экспорта Excel: '+err.message); }
+  } catch(e) {
+    alert('⚠️ Ошибка экспорта Excel: ' + e.message);
+  }
 });
 
-/* Запуск */
+/* =========================================================
+   PWA: УСТАНОВКА НА ЭКРАН (ПК И ТЕЛЕФОН)
+   ========================================================= */
+let deferredPrompt = null;
+const installBtn = document.getElementById('btnInstall');
+const modalInstall = document.getElementById('modalInstall');
+const modalClose = document.getElementById('modalClose');
+
+// Слушаем системное событие готовности к установке
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  deferredPrompt = e;
+  if(installBtn){
+    installBtn.style.background = '#238636';
+    installBtn.textContent = '📥 Установить приложение';
+  }
+});
+
+if(installBtn){
+  installBtn.addEventListener('click', function(){
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function(choice){
+        if(choice.outcome === 'accepted'){
+          installBtn.style.display = 'none';
+        }
+        deferredPrompt = null;
+      });
+    } else {
+      // Если браузер не поддерживает автоматический prompt (iOS Safari или браузер без поддержки), открываем модальную подсказку
+      modalInstall.classList.add('open');
+    }
+  });
+}
+
+modalClose.addEventListener('click', function(){
+  modalInstall.classList.remove('open');
+});
+modalInstall.addEventListener('click', function(e){
+  if(e.target === modalInstall) modalInstall.classList.remove('open');
+});
+
+// Регистрация Service Worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').then(function(reg){
+      console.log('SW зарегистрирован успешно:', reg.scope);
+    }).catch(function(err){
+      console.log('SW ошибка:', err);
+    });
+  });
+}
+
+/* Запуск приложения */
 document.getElementById('empHead').innerHTML = EMPLOYEES.map(function(e){ return '<th>' + e[1] + '</th>'; }).join('');
 initData();
 </script>
