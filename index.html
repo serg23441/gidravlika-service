@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Гидравлика Сервис / отслеживание-оплаты</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>⚙️</text></svg>">
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#21262d; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e; --blue:#58a6ff; --blue-btn:#1f6feb;
+    --green:#238636; --green2:#2ea043; --purple:#8250df; --red:#f85149;
+    --orange:#f0883e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,'Segoe UI',Roboto,Arial,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+
+  /* Navbar */
+  .navbar {
+    display:flex; align-items:center; gap:14px;
+    background:#010409; border-bottom:1px solid var(--border);
+    padding:10px 20px;
+  }
+  .navbar svg { fill: var(--text); flex-shrink:0; }
+  .burger { cursor:pointer; }
+  .brand { font-size:15px; color:var(--text); white-space:nowrap; }
+  .brand .who { font-weight:600; }
+  .brand .slash { color:var(--muted); padding:0 2px; }
+  .brand .repo { font-weight:600; color:var(--blue); }
+  .tag-public { font-size:12px; color:var(--muted); border:1px solid var(--border); border-radius:99px; padding:2px 9px; }
+  .navbar .spacer { flex:1; }
+  .dbinfo { font-size:12.5px; color:var(--muted); white-space:nowrap; }
+
+  .page { max-width:2500px; margin:0 auto; padding:0 16px; }
+
+  /* Вкладки */
+  .tabs { display:flex; gap:4px; border-bottom:1px solid var(--border); margin:18px 0 20px; overflow-x:auto; }
+  .tab {
+    background:none; border:none; color:var(--muted);
+    font-size:14px; padding:10px 14px; cursor:pointer;
+    border-bottom:2px solid transparent; margin-bottom:-1px; white-space:nowrap;
+    display:flex; align-items:center; gap:6px;
+  }
+  .tab:hover { color:var(--text); }
+  .tab.active { color:var(--text); border-bottom-color:#fd8c73; font-weight:600; }
+  .tab-badge {
+    background:var(--panel2); border:1px solid var(--border); border-radius:10px;
+    font-size:11px; padding:1px 6px; color:var(--orange); font-weight:700;
+  }
+
+  /* Баннер */
+  .banner {
+    background: rgba(56,139,253,.1); border:1px solid #388bfd;
+    border-radius:6px; padding:12px 16px; font-size:13.5px; line-height:1.55;
+    color:var(--blue); margin-bottom:18px;
+  }
+
+  /* Поиск без лупы */
+  .searchbar {
+    display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+    background:var(--panel); border:1px solid var(--border); border-radius:6px;
+    padding:12px 14px; margin-bottom:16px;
+  }
+  .searchbox { flex:1; min-width:220px; max-width:420px; }
+  .searchbox input {
+    width:100%; background:var(--bg); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); padding:8px 12px; font-size:14px; outline:none;
+  }
+  .searchbox input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(56,139,253,.3); }
+  .searchbox input::placeholder { color:var(--muted); }
+  .search-count { font-size:13px; color:var(--muted); }
+  .btn-reset {
+    background:var(--panel2); border:1px solid var(--border); border-radius:6px;
+    color:var(--muted); padding:8px 14px; font-size:13px; cursor:pointer;
+  }
+  .btn-reset:hover { color:var(--text); border-color:var(--muted); }
+
+  /* Таблицы */
+  table { width:100%; border-collapse:collapse; }
+  thead th {
+    position: sticky; background:var(--panel); color:var(--muted);
+    font-size:13px; font-weight:600; padding:9px 8px;
+    border:1px solid var(--border); z-index:10;
+  }
+  tr.head1 th { top:0; height:40px; z-index:11; color:var(--text); }
+  tr.head2 th { top:40px; z-index:10; }
+  th.sortable { cursor:pointer; user-select:none; }
+  th.sortable:hover { color:var(--blue); background:var(--panel2); }
+  tbody td { border:1px solid var(--border); padding:6px; background:var(--bg); font-size:14px; }
+  tr.month td {
+    background:var(--panel); color:var(--blue); font-weight:600; font-size:14.5px;
+    padding:9px 14px; cursor:pointer; user-select:none;
+  }
+  tr.month:hover td { background:var(--panel2); }
+  tr.month .arrow { display:inline-block; width:20px; }
+  input[type="date"], input[type="text"], input[type="number"], select {
+    width:100%; background:var(--bg); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); padding:8px 10px; font-size:14px; outline:none;
+  }
+  input:focus, select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(56,139,253,.25); }
+  input[type="date"] { width:155px; }
+  input.num { width:140px; }
+  input.client { min-width:240px; }
+  input.hours { width:80px; text-align:center; }
+  input[type=number]::-webkit-inner-spin-button { opacity:.4; }
+  input[type="date"]::-webkit-calendar-picker-indicator { filter:invert(.6); cursor:pointer; }
+  
+  .pill {
+    display:block; width:100%; border-radius:6px; padding:8px 12px;
+    font-size:13.5px; font-weight:600; cursor:pointer; border:1px solid;
+    text-align:center; min-width:104px;
+  }
+  .pill.yes    { background:rgba(46,160,67,.15); border-color:var(--green2); color:#3fb950; }
+  .pill.no     { background:rgba(248,81,73,.12); border-color:var(--red); color:#ff7b72; }
+  .pill.choose { background:var(--panel2); border-color:var(--border); color:var(--muted); }
+  .pill.urgent { background:rgba(240,136,62,.15); border-color:var(--orange); color:var(--orange); }
+  .pill.normal { background:var(--panel2); border-color:var(--border); color:var(--muted); }
+  .pill.done   { background:rgba(46,160,67,.15); border-color:var(--green2); color:#3fb950; }
+  .pill.todo   { background:rgba(88,166,255,.15); border-color:var(--blue); color:var(--blue); }
+  .pill:hover  { filter:brightness(1.2); }
+
+  .mini {
+    background:var(--panel2); border:1px solid var(--border); border-radius:6px;
+    color:var(--muted); padding:7px 12px; font-size:12.5px; cursor:pointer; white-space:nowrap;
+  }
+  .mini:hover { color:var(--text); border-color:var(--muted); }
+  .photo-cell { white-space:nowrap; text-align:center; }
+  .thumb {
+    width:44px; height:44px; object-fit:cover; border-radius:6px;
+    border:1px solid var(--blue); cursor:zoom-in; vertical-align:middle; margin-left:6px;
+  }
+  .act-btn { background:transparent; border:none; font-size:17px; cursor:pointer; padding:6px 9px; color:var(--muted); }
+  .act-btn:hover { color:var(--text); transform:scale(1.15); }
+  tfoot td {
+    position:sticky; bottom:0; background:var(--panel2); color:var(--text);
+    font-weight:700; font-size:14.5px; text-align:center; padding:13px 8px;
+    border:1px solid var(--border); z-index:9;
+  }
+  tfoot td.lbl { text-align:right; padding-right:20px; font-size:15px; }
+
+  /* Карточки и итоги */
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:22px; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:16px 18px; }
+  .card .num-big { font-size:28px; font-weight:700; }
+  .card .lbl2 { font-size:13px; color:var(--muted); margin-top:4px; }
+  .card.blue .num-big { color:var(--blue); }
+  .card.green .num-big { color:#3fb950; }
+  .card.red .num-big { color:#ff7b72; }
+  .card.orange .num-big { color:var(--orange); }
+  .card.purple .num-big { color:#d2a8ff; }
+  
+  .summary-section { margin-top:24px; }
+  .summary-title { font-size:16px; font-weight:600; color:var(--text); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
+  .sumtable { background:var(--panel); border:1px solid var(--border); border-radius:6px; overflow:hidden; margin-bottom:20px; }
+  .sumtable th { background:var(--panel2); }
+  .sumtable th, .sumtable td { padding:10px 14px; border:1px solid var(--border); font-size:14px; text-align:center; }
+  .hidden { display:none !important; }
+
+  /* Стили вкладки Планы */
+  .plan-row-urgent td { background:rgba(240,136,62,.04); }
+  .plan-row-done td { opacity:0.65; }
+  .plan-row-done input[type="text"] { text-decoration:line-through; color:var(--muted); }
+  .row-seq { text-align:center; font-weight:700; color:var(--muted); width:46px; }
+
+  /* Кнопки действий */
+  .toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:22px; }
+  .btn {
+    border:1px solid var(--border); border-radius:6px; padding:10px 18px;
+    font-size:14px; font-weight:600; color:var(--text); cursor:pointer;
+    background:var(--panel2);
+  }
+  .btn:hover { filter:brightness(1.15); }
+  .btn-add   { background:var(--green);  border-color:var(--green); }
+  .btn-html  { background:var(--purple); border-color:var(--purple); }
+  .btn-excel { background:var(--green2); border-color:var(--green2); }
+  .btn-clear:hover { color:#ff7b72; border-color:var(--red); }
+
+  /* Lightbox */
+  .lightbox {
+    position:fixed; inset:0; background:rgba(1,4,9,.92);
+    display:none; flex-direction:column; z-index:100;
+  }
+  .lightbox.open { display:flex; }
+  .lb-top { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; }
+  .lb-btn {
+    background:var(--panel2); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); padding:8px 16px; font-size:14px; cursor:pointer;
+  }
+  .lb-btn:hover { border-color:var(--blue); color:var(--blue); }
+  .lb-counter { color:var(--muted); font-size:14px; }
+  .lb-body { flex:1; display:flex; align-items:center; justify-content:center; gap:14px; padding:0 14px; min-height:0; }
+  .lb-body img { max-width:76vw; max-height:66vh; border-radius:8px; border:1px solid var(--border); box-shadow:0 8px 40px rgba(0,0,0,.7); }
+  .lb-nav {
+    background:var(--panel2); border:1px solid var(--border); border-radius:50%;
+    width:48px; height:48px; font-size:26px; color:var(--text); cursor:pointer; flex-shrink:0;
+  }
+  .lb-nav:hover { border-color:var(--blue); color:var(--blue); }
+  .lb-nav:disabled { opacity:.3; cursor:default; }
+  .lb-caption { text-align:center; color:var(--muted); font-size:14px; padding:14px 18px 18px; }
+
+  ::-webkit-scrollbar { width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb { background:var(--panel2); border-radius:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+</style>
+</head>
+<body>
+
+<header class="navbar">
+  <svg class="burger" height="22" width="22" viewBox="0 0 16 16"><path d="M1 2.75A.75.75 0 0 1 1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75Zm0 5A.75.75 0 0 1 1.75 7h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 7.75ZM1.75 12h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5Z"/></svg>
+  <svg height="28" width="28" viewBox="0 0 16 16"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
+  <span class="brand"><span class="who">Гидравлика Сервис</span><span class="slash">/</span><span class="repo">отслеживание-оплаты</span></span>
+  <span class="tag-public">Public</span>
+  <span class="spacer"></span>
+  <span class="dbinfo" id="dbinfo"></span>
+</header>
+
+<div class="page">
+  <nav class="tabs">
+    <button class="tab active" data-view="orders">📋 Заказы</button>
+    <button class="tab" data-view="plans">📌 Планы <span class="tab-badge" id="plansBadge">0</span></button>
+    <button class="tab" data-view="summary">📊 Итоги</button>
+  </nav>
+
+  <div class="banner">📌 Данные сохраняются локально в вашем браузере. Выгрузка в Excel формирует структурированный файл с отдельными листами по заказам, планам и фото.</div>
+
+  <!-- Поиск без иконки лупы -->
+  <div class="searchbar" id="searchbar">
+    <div class="searchbox"><input type="text" id="searchNum" placeholder="Поиск по № заказа…" autocomplete="off"></div>
+    <div class="searchbox"><input type="text" id="searchClient" placeholder="Поиск по клиенту…" autocomplete="off"></div>
+    <span class="search-count" id="searchCount"></span>
+    <span style="flex:1"></span>
+    <button class="btn-reset" id="btnReset">✕ Сбросить фильтр</button>
+  </div>
+
+  <!-- Вкладка: Заказы -->
+  <div id="view-orders">
+    <table>
+      <thead>
+        <tr class="head1">
+          <th rowspan="2" class="sortable" id="thSortDate" title="Нажмите для сортировки по дате">Дата <span id="sortDateIcon">▲</span></th>
+          <th rowspan="2">№ заказа</th>
+          <th rowspan="2">Клиент</th>
+          <th colspan="6" class="hours-group">Количество часов</th>
+          <th rowspan="2">Хозяйство<br>оплатило</th>
+          <th rowspan="2">Начислено</th>
+          <th rowspan="2">Фото акта</th>
+          <th rowspan="2">Действия</th>
+        </tr>
+        <tr class="head2" id="empHead"></tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+      <tfoot>
+        <tr>
+          <td class="lbl" colspan="3" id="totLabel">Общий итог часов:</td>
+          <td id="tot-bragin">0</td><td id="tot-bystrov">0</td><td id="tot-veprev">0</td>
+          <td id="tot-zuykov">0</td><td id="tot-kovrizhnykh">0</td><td id="tot-plyusnin">0</td>
+          <td colspan="4" id="tot-sum">Всего: 0 ч.</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="toolbar">
+      <button class="btn btn-add" id="btnAdd">+ Добавить заказ</button>
+      <button class="btn btn-clear" id="btnClear">🗑 Очистить всё</button>
+      <span style="flex:1"></span>
+      <button class="btn btn-html" id="btnHtml">⬇ Скачать отчет с фото (HTML)</button>
+      <button class="btn btn-excel" id="btnExcel">📊 Скачать Excel (.xlsx)</button>
+    </div>
+  </div>
+
+  <!-- Вкладка: Планы -->
+  <div id="view-plans" class="hidden">
+    <table>
+      <thead>
+        <tr class="head1">
+          <th style="width:50px">№</th>
+          <th style="width:170px">Срок / Дата</th>
+          <th>Описание задачи / Плана</th>
+          <th style="width:180px">Ответственный</th>
+          <th style="width:150px">Приоритет</th>
+          <th style="width:150px">Выполнение</th>
+          <th style="width:90px">Действия</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyPlans"></tbody>
+    </table>
+
+    <div class="toolbar">
+      <button class="btn btn-add" id="btnAddPlan">+ Добавить план</button>
+      <button class="btn btn-clear" id="btnClearPlans">🗑 Очистить планы</button>
+    </div>
+  </div>
+
+  <!-- Вкладка: Итоги -->
+  <div id="view-summary" class="hidden">
+    <div class="cards" id="cards"></div>
+
+    <div class="summary-section">
+      <div class="summary-title">
+        <span>📅 Итоги по месяцам</span>
+        <button class="btn-reset" id="btnToggleMonthSort" style="padding:4px 10px;font-size:12px;">Сортировка: <span id="lblMonthSort">По убыванию (сначала новые) ▼</span></button>
+      </div>
+      <div class="sumtable"><table>
+        <thead>
+          <tr>
+            <th>Месяц</th>
+            <th>Заказов</th>
+            <th>Сумма часов</th>
+            <th>Оплачено хоз-вом</th>
+            <th>Начислено</th>
+            <th>С актами</th>
+          </tr>
+        </thead>
+        <tbody id="sumMonthsBody"></tbody>
+      </table></div>
+    </div>
+
+    <div class="summary-section">
+      <div class="summary-title">
+        <span>👷 Статистика по сотрудникам</span>
+      </div>
+      <div class="sumtable"><table>
+        <thead><tr><th>Сотрудник</th><th>Всего часов</th><th>Доля от всех часов</th></tr></thead>
+        <tbody id="sumBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <div class="lb-top">
+    <button class="lb-btn" id="lbBack">← Назад к таблице</button>
+    <span class="lb-counter" id="lbCounter"></span>
+    <button class="lb-btn" id="lbClose">✕ Закрыть</button>
+  </div>
+  <div class="lb-body">
+    <button class="lb-nav" id="lbPrev">‹</button>
+    <img id="lbImg" alt="фото акта">
+    <button class="lb-nav" id="lbNext">›</button>
+  </div>
+  <div class="lb-caption" id="lbCaption"></div>
+</div>
+
+<script>
+const EMPLOYEES = [
+  ['bragin','Брагин'],['bystrov','Быстров'],['veprev','Вепрев'],
+  ['zuykov','Зуйков'],['kovrizhnykh','Коврижных'],['plyusnin','Плюснин']
+];
+const LS_KEY = 'gidra_orders_v2';
+let orders = [];
+let plans = [];
+let collapsed = {};
+let photoTargetId = null;
+let seq = 0;
+let viewPhotos = [];
+let lbIndex = 0;
+const search = { num:'', client:'' };
+
+let dateSortOrder = 'asc'; // 'asc' (по порядку от старых к новым) или 'desc'
+let monthSortOrder = 'desc'; // 'desc' или 'asc' для вкладки итогов
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function emptyHours(){ const h={}; EMPLOYEES.forEach(e=>h[e[0]]=0); return h; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}.${m}.${y}`; }
+function monthKey(iso){ return iso ? iso.slice(0,7) : '9999-12'; }
+function monthLabel(key){
+  if(!key || key==='9999-12') return 'Без даты';
+  const [y,m] = key.split('-').map(Number);
+  const name = new Date(y, m-1, 1).toLocaleDateString('ru-RU', {month:'long'});
+  return name.charAt(0).toUpperCase() + name.slice(1) + ' ' + y;
+}
+function todayISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtNum(n){ return (Math.round(n*100)/100).toString(); }
+function isFiltered(){ return search.num !== '' || search.client !== ''; }
+function matchOrder(o){
+  return (o.num||'').toLowerCase().includes(search.num) && (o.client||'').toLowerCase().includes(search.client);
+}
+
+function seed(){
+  const mk = (date,num,h,paid,accrued) => ({id:uid(),seq:seq++,date,num,client:'Клиент',hours:Object.assign(emptyHours(),h||{}),paid:paid||null,accrued:accrued||null,photo:null});
+  orders = [
+    mk('2026-09-01','1',{bragin:1,kovrizhnykh:2},'no','no'),
+    mk('2026-09-02','2',{bragin:1},'no','no'),
+    mk('2026-09-30','',{},null,null),
+    mk('2026-10-01','',{bystrov:2,zuykov:4,kovrizhnykh:5},'yes','no'),
+    mk('2026-10-15','',{bystrov:3},null,null),
+    mk('2026-10-16','',{},null,null),
+    mk('2026-10-22','',{kovrizhnykh:2},null,null),
+    mk('2026-10-29','',{bystrov:3,veprev:2,zuykov:2},null,null),
+  ];
+  plans = [
+    { id:uid(), date:'2026-11-05', task:'Заказать комплект РВД и фильтрующие элементы', emp:'kovrizhnykh', priority:'urgent', done:false },
+    { id:uid(), date:'2026-11-08', task:'Провести ТО гидравлики на погрузчике', emp:'bystrov', priority:'normal', done:false },
+    { id:uid(), date:'2026-10-25', task:'Сверить акты выполненных работ за октябрь', emp:'bragin', priority:'urgent', done:true }
+  ];
+}
+
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY) || localStorage.getItem('gidra_orders_v1');
+    if(raw){
+      const d = JSON.parse(raw);
+      orders = d.orders || [];
+      plans = d.plans || [];
+      seq = d.seq || orders.length;
+      collapsed = d.collapsed || {};
+      if(!plans.length && !localStorage.getItem(LS_KEY)) {
+        seedPlansOnly();
+      }
+    } else {
+      seed();
+      save();
+    }
+  }catch(e){ seed(); }
+}
+
+function seedPlansOnly(){
+  plans = [
+    { id:uid(), date:todayISO(), task:'Заказать комплект РВД и уплотнители', emp:'kovrizhnykh', priority:'urgent', done:false },
+    { id:uid(), date:todayISO(), task:'Провести плановое ТО гидравлики', emp:'bystrov', priority:'normal', done:false }
+  ];
+}
+
+function save(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify({orders, plans, seq, collapsed})); }
+  catch(e){ alert('⚠️ Не удалось сохранить: переполнено локальное хранилище.'); }
+}
+
+function statusBtn(o, field){
+  const v = o[field];
+  const cls = v==='yes' ? 'yes' : v==='no' ? 'no' : 'choose';
+  const txt = v==='yes' ? 'Да' : v==='no' ? 'Нет' : 'Выбрать...';
+  return `<button class="pill ${cls}" data-act="status" data-id="${o.id}" data-field="${field}">${txt}</button>`;
+}
+
+function renderOrders(){
+  const sortedAll = orders.slice().sort((a,b)=>{
+    const da = a.date || '', db = b.date || '';
+    if(da !== db) {
+      return dateSortOrder === 'asc' ? da.localeCompare(db) : db.localeCompare(da);
+    }
+    return dateSortOrder === 'asc' ? a.seq - b.seq : b.seq - a.seq;
+  });
+
+  const sorted = sortedAll.filter(matchOrder);
+  viewPhotos = sorted.filter(o=>o.photo);
+
+  // Группируем по месяцам с сохранением порядка сортировки
+  const groupOrder = [];
+  const groups = {};
+  sorted.forEach(o=>{
+    const k = monthKey(o.date);
+    if(!groups[k]){
+      groups[k] = [];
+      groupOrder.push(k);
+    }
+    groups[k].push(o);
+  });
+
+  let html = '';
+  for(const k of groupOrder){
+    const isCol = !!collapsed[k];
+    html += `<tr class="month" data-act="toggle" data-month="${k}"><td colspan="13"><span class="arrow">${isCol?'▸':'▼'}</span> ${monthLabel(k)}</td></tr>`;
+    if(isCol) continue;
+    for(const o of groups[k]){
+      html += `<tr>
+        <td><input type="date" data-id="${o.id}" data-field="date" value="${esc(o.date)}"></td>
+        <td><input type="text" class="num" placeholder="№ заказа" data-id="${o.id}" data-field="num" value="${esc(o.num)}"></td>
+        <td><input type="text" class="client" placeholder="Клиент" data-id="${o.id}" data-field="client" value="${esc(o.client)}"></td>
+        ${EMPLOYEES.map(e=>`<td><input type="number" min="0" step="0.5" class="hours" data-id="${o.id}" data-field="hours" data-emp="${e[0]}" value="${o.hours[e[0]]||0}"></td>`).join('')}
+        <td>${statusBtn(o,'paid')}</td>
+        <td>${statusBtn(o,'accrued')}</td>
+        <td class="photo-cell">
+          <button class="mini" data-act="photo" data-id="${o.id}">${o.photo?'Изм.':'+ Фото'}</button>
+          ${o.photo?`<img class="thumb" data-act="view" data-id="${o.id}" src="${o.photo}" alt="фото">`:''}
+        </td>
+        <td style="white-space:nowrap;text-align:center">
+          <button class="act-btn" title="Дублировать строку" data-act="dup" data-id="${o.id}">＋</button>
+          <button class="act-btn" title="Удалить строку" data-act="del" data-id="${o.id}">🗑</button>
+        </td>
+      </tr>`;
+    }
+  }
+  document.getElementById('tbody').innerHTML = html ||
+    `<tr><td colspan="13" style="text-align:center;padding:32px;color:var(--muted)">Ничего не найдено — измените фильтр или добавьте новый заказ</td></tr>`;
+
+  // Итоги по отфильтрованным строкам
+  const tot = {}; let sum = 0;
+  EMPLOYEES.forEach(e=>tot[e[0]]=0);
+  sorted.forEach(o=>EMPLOYEES.forEach(e=>{ const v=parseFloat(o.hours[e[0]])||0; tot[e[0]]+=v; sum+=v; }));
+  EMPLOYEES.forEach(e=>{ document.getElementById('tot-'+e[0]).textContent = fmtNum(tot[e[0]]); });
+  document.getElementById('tot-sum').textContent = 'Всего: ' + fmtNum(sum) + ' ч.';
+  document.getElementById('totLabel').textContent = isFiltered() ? 'Итог по фильтру:' : 'Общий итог часов:';
+  document.getElementById('searchCount').textContent = isFiltered() ? `Показано ${sorted.length} из ${orders.length}` : `Всего записей: ${orders.length}`;
+  document.getElementById('dbinfo').textContent = `💾 БД • ${orders.length} заказов • ${plans.length} планов`;
+  document.getElementById('sortDateIcon').textContent = dateSortOrder === 'asc' ? '▲' : '▼';
+}
+
+function renderPlans(){
+  let html = '';
+  plans.forEach((p, index)=>{
+    const isDone = !!p.done;
+    const isUrgent = p.priority === 'urgent';
+    const rowClass = (isUrgent ? 'plan-row-urgent ' : '') + (isDone ? 'plan-row-done ' : '');
+    
+    html += `<tr class="${rowClass}">
+      <td class="row-seq">${index + 1}</td>
+      <td><input type="date" data-plan-id="${p.id}" data-plan-field="date" value="${esc(p.date)}"></td>
+      <td><input type="text" placeholder="Введите задачу или план…" data-plan-id="${p.id}" data-plan-field="task" value="${esc(p.task)}"></td>
+      <td>
+        <select data-plan-id="${p.id}" data-plan-field="emp">
+          <option value="">(Не назначен)</option>
+          ${EMPLOYEES.map(e=>`<option value="${e[0]}" ${p.emp===e[0]?'selected':''}>${e[1]}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        <button class="pill ${isUrgent?'urgent':'normal'}" data-act="togglePlanPriority" data-plan-id="${p.id}">
+          ${isUrgent ? '🔥 Важное' : '⚪ Обычное'}
+        </button>
+      </td>
+      <td>
+        <button class="pill ${isDone?'done':'todo'}" data-act="togglePlanDone" data-plan-id="${p.id}">
+          ${isDone ? '✓ Выполнено' : '⏳ В работе'}
+        </button>
+      </td>
+      <td style="white-space:nowrap;text-align:center">
+        <button class="act-btn" title="Дублировать план" data-act="dupPlan" data-plan-id="${p.id}">＋</button>
+        <button class="act-btn" title="Удалить план" data-act="delPlan" data-plan-id="${p.id}">🗑</button>
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById('tbodyPlans').innerHTML = html ||
+    `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Нет запланированных дел. Нажмите «+ Добавить план»</td></tr>`;
+
+  const pendingCount = plans.filter(p=>!p.done).length;
+  document.getElementById('plansBadge').textContent = pendingCount;
+}
+
+function renderSummary(){
+  const tot = {}; let sum = 0;
+  EMPLOYEES.forEach(e=>tot[e[0]]=0);
+  orders.forEach(o=>EMPLOYEES.forEach(e=>{ const v=parseFloat(o.hours[e[0]])||0; tot[e[0]]+=v; sum+=v; }));
+  const paidCnt = orders.filter(o=>o.paid==='yes').length;
+  const accrCnt = orders.filter(o=>o.accrued==='yes').length;
+  const photoCnt = orders.filter(o=>o.photo).length;
+  const pendingPlans = plans.filter(p=>!p.done).length;
+
+  document.getElementById('cards').innerHTML = `
+    <div class="card blue"><div class="num-big">${orders.length}</div><div class="lbl2">Всего заказов</div></div>
+    <div class="card green"><div class="num-big">${paidCnt}</div><div class="lbl2">Хозяйство оплатило</div></div>
+    <div class="card red"><div class="num-big">${accrCnt}</div><div class="lbl2">Начислено</div></div>
+    <div class="card orange"><div class="num-big">${pendingPlans}</div><div class="lbl2">Планов в работе</div></div>
+    <div class="card purple"><div class="num-big">${photoCnt}</div><div class="lbl2">С фото актов</div></div>
+    <div class="card"><div class="num-big">${fmtNum(sum)} ч.</div><div class="lbl2">Суммарно часов</div></div>`;
+
+  // Группировка и статистика по месяцам
+  const monthsData = {};
+  orders.forEach(o=>{
+    const k = monthKey(o.date);
+    if(!monthsData[k]){
+      monthsData[k] = { count:0, hours:0, paid:0, accrued:0, photos:0 };
+    }
+    monthsData[k].count++;
+    let orderH = 0;
+    EMPLOYEES.forEach(e=>{ orderH += (parseFloat(o.hours[e[0]])||0); });
+    monthsData[k].hours += orderH;
+    if(o.paid === 'yes') monthsData[k].paid++;
+    if(o.accrued === 'yes') monthsData[k].accrued++;
+    if(o.photo) monthsData[k].photos++;
+  });
+
+  const monthKeys = Object.keys(monthsData).sort((a,b)=>{
+    return monthSortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a);
+  });
+
+  let monthsHtml = '';
+  monthKeys.forEach(k=>{
+    const md = monthsData[k];
+    monthsHtml += `<tr>
+      <td style="font-weight:600;color:var(--blue);text-align:left">${monthLabel(k)}</td>
+      <td>${md.count}</td>
+      <td style="font-weight:600">${fmtNum(md.hours)} ч.</td>
+      <td style="color:#3fb950">${md.paid}</td>
+      <td style="color:#ff7b72">${md.accrued}</td>
+      <td>${md.photos}</td>
+    </tr>`;
+  });
+
+  document.getElementById('sumMonthsBody').innerHTML = monthsHtml || `<tr><td colspan="6" style="color:var(--muted)">Нет данных</td></tr>`;
+  document.getElementById('lblMonthSort').textContent = monthSortOrder === 'asc' ? 'По возрастанию (старые) ▲' : 'По убыванию (новые) ▼';
+
+  // По сотрудникам
+  document.getElementById('sumBody').innerHTML = EMPLOYEES.map(e=>{
+    const share = sum>0 ? Math.round(tot[e[0]]/sum*1000)/10 : 0;
+    return `<tr><td style="text-align:left;font-weight:600">${e[1]}</td><td>${fmtNum(tot[e[0]])}</td><td>${share}%</td></tr>`;
+  }).join('');
+}
+
+function renderAll(){
+  renderOrders();
+  renderPlans();
+  renderSummary();
+}
+
+function findOrder(id){ return orders.find(o=>o.id===id); }
+function findPlan(id){ return plans.find(p=>p.id===id); }
+
+/* События таблицы заказов */
+const tbody = document.getElementById('tbody');
+tbody.addEventListener('input', e=>{
+  const el = e.target, id = el.dataset.id;
+  if(!id) return;
+  const o = findOrder(id); if(!o) return;
+  if(el.dataset.field==='hours'){ o.hours[el.dataset.emp] = parseFloat(el.value)||0; save(); renderSummary(); }
+  else if(el.dataset.field==='num'){ o.num = el.value; save(); }
+  else if(el.dataset.field==='client'){ o.client = el.value; save(); }
+});
+
+tbody.addEventListener('change', e=>{
+  const el = e.target;
+  if(el.dataset.field==='date'){
+    const o = findOrder(el.dataset.id); if(o){ o.date = el.value; save(); renderOrders(); renderSummary(); }
+  }
+});
+
+tbody.addEventListener('click', e=>{
+  const el = e.target.closest('[data-act]');
+  if(!el) return;
+  const act = el.dataset.act, id = el.dataset.id;
+  if(act==='toggle'){ collapsed[el.dataset.month] = !collapsed[el.dataset.month]; save(); renderOrders(); }
+  else if(act==='status'){
+    const o = findOrder(id); if(!o) return;
+    const f = el.dataset.field;
+    o[f] = o[f]===null ? 'yes' : o[f]==='yes' ? 'no' : null;
+    save(); renderOrders(); renderSummary();
+  }
+  else if(act==='photo'){ photoTargetId = id; document.getElementById('fileInput').click(); }
+  else if(act==='view'){ openLightbox(id); }
+  else if(act==='dup'){
+    const o = findOrder(id); if(!o) return;
+    const copy = JSON.parse(JSON.stringify(o)); copy.id = uid(); copy.seq = seq++;
+    orders.splice(orders.indexOf(o)+1, 0, copy);
+    save(); renderOrders(); renderSummary();
+  }
+  else if(act==='del'){
+    const o = findOrder(id); if(!o) return;
+    if(confirm(`Удалить заказ от ${fmtDate(o.date)} №${o.num||'—'}?`)){ orders.splice(orders.indexOf(o),1); save(); renderOrders(); renderSummary(); }
+  }
+});
+
+/* Сортировка по дате в заказах */
+document.getElementById('thSortDate').addEventListener('click', ()=>{
+  dateSortOrder = dateSortOrder === 'asc' ? 'desc' : 'asc';
+  renderOrders();
+});
+
+/* События таблицы планов */
+const tbodyPlans = document.getElementById('tbodyPlans');
+tbodyPlans.addEventListener('input', e=>{
+  const el = e.target, id = el.dataset.planId;
+  if(!id) return;
+  const p = findPlan(id); if(!p) return;
+  if(el.dataset.planField==='task'){ p.task = el.value; save(); }
+});
+
+tbodyPlans.addEventListener('change', e=>{
+  const el = e.target, id = el.dataset.planId;
+  if(!id) return;
+  const p = findPlan(id); if(!p) return;
+  if(el.dataset.planField==='date'){ p.date = el.value; save(); }
+  else if(el.dataset.planField==='emp'){ p.emp = el.value; save(); }
+});
+
+tbodyPlans.addEventListener('click', e=>{
+  const el = e.target.closest('[data-act]');
+  if(!el) return;
+  const act = el.dataset.act, id = el.dataset.planId;
+  const p = findPlan(id);
+  if(act==='togglePlanPriority' && p){
+    p.priority = p.priority === 'urgent' ? 'normal' : 'urgent';
+    save(); renderPlans();
+  }
+  else if(act==='togglePlanDone' && p){
+    p.done = !p.done;
+    save(); renderPlans(); renderSummary();
+  }
+  else if(act==='dupPlan' && p){
+    const copy = JSON.parse(JSON.stringify(p));
+    copy.id = uid();
+    plans.splice(plans.indexOf(p)+1, 0, copy);
+    save(); renderPlans(); renderSummary();
+  }
+  else if(act==='delPlan' && p){
+    if(confirm(`Удалить задачу: "${p.task||'План'}"?`)){
+      plans.splice(plans.indexOf(p), 1);
+      save(); renderPlans(); renderSummary();
+    }
+  }
+});
+
+/* Сортировка месяцев в итогах */
+document.getElementById('btnToggleMonthSort').addEventListener('click', ()=>{
+  monthSortOrder = monthSortOrder === 'desc' ? 'asc' : 'desc';
+  renderSummary();
+});
+
+/* Поиск */
+document.getElementById('searchNum').addEventListener('input', e=>{ search.num = e.target.value.trim().toLowerCase(); renderOrders(); });
+document.getElementById('searchClient').addEventListener('input', e=>{ search.client = e.target.value.trim().toLowerCase(); renderOrders(); });
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  search.num=''; search.client='';
+  document.getElementById('searchNum').value='';
+  document.getElementById('searchClient').value='';
+  renderOrders();
+});
+
+/* Переключение вкладок */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active', x===t));
+    const v = t.dataset.view;
+    document.getElementById('view-orders').classList.toggle('hidden', v!=='orders');
+    document.getElementById('view-plans').classList.toggle('hidden', v!=='plans');
+    document.getElementById('view-summary').classList.toggle('hidden', v!=='summary');
+    document.getElementById('searchbar').style.display = v==='orders' ? 'flex' : 'none';
+  });
+});
+
+/* Lightbox */
+function openLightbox(id){
+  const idx = viewPhotos.findIndex(o=>o.id===id);
+  if(idx<0) return;
+  lbIndex = idx;
+  updateLightbox();
+  document.getElementById('lightbox').classList.add('open');
+}
+function updateLightbox(){
+  const o = viewPhotos[lbIndex]; if(!o) return;
+  document.getElementById('lbImg').src = o.photo;
+  document.getElementById('lbCounter').textContent = `Фото ${lbIndex+1} из ${viewPhotos.length}`;
+  document.getElementById('lbCaption').textContent = `Заказ от ${fmtDate(o.date)} • № ${o.num||'—'} • ${o.client}`;
+  document.getElementById('lbPrev').disabled = lbIndex<=0;
+  document.getElementById('lbNext').disabled = lbIndex>=viewPhotos.length-1;
+}
+function closeLightbox(){ document.getElementById('lightbox').classList.remove('open'); }
+document.getElementById('lbBack').addEventListener('click', closeLightbox);
+document.getElementById('lbClose').addEventListener('click', closeLightbox);
+document.getElementById('lbPrev').addEventListener('click', ()=>{ if(lbIndex>0){ lbIndex--; updateLightbox(); } });
+document.getElementById('lbNext').addEventListener('click', ()=>{ if(lbIndex<viewPhotos.length-1){ lbIndex++; updateLightbox(); } });
+document.getElementById('lightbox').addEventListener('click', e=>{ if(e.target.id==='lightbox') closeLightbox(); });
+
+/* Загрузка фото */
+document.getElementById('fileInput').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  e.target.value = '';
+  if(!file || !photoTargetId) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const max = 900;
+      let w = img.width, h = img.height;
+      if(w > max || h > max){ const k = max/Math.max(w,h); w = Math.round(w*k); h = Math.round(h*k); }
+      const c = document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      const o = findOrder(photoTargetId);
+      if(o){ o.photo = c.toDataURL('image/jpeg', 0.82); save(); renderOrders(); renderSummary(); }
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+/* Кнопки панели управления */
+document.getElementById('btnAdd').addEventListener('click', ()=>{
+  orders.push({id:uid(), seq:seq++, date:todayISO(), num:'', client:'Клиент', hours:emptyHours(), paid:null, accrued:null, photo:null});
+  save(); renderOrders(); renderSummary();
+  window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'});
+});
+document.getElementById('btnClear').addEventListener('click', ()=>{
+  if(orders.length && confirm('⚠️ Удалить ВСЕ заказы безвозвратно?')){ orders=[]; seq=0; save(); renderOrders(); renderSummary(); }
+});
+document.getElementById('btnAddPlan').addEventListener('click', ()=>{
+  plans.push({ id:uid(), date:todayISO(), task:'', emp:'', priority:'normal', done:false });
+  save(); renderPlans(); renderSummary();
+});
+document.getElementById('btnClearPlans').addEventListener('click', ()=>{
+  if(plans.length && confirm('⚠️ Очистить все планы?')){ plans=[]; save(); renderPlans(); renderSummary(); }
+});
+
+/* Экспорт отчета в HTML */
+document.getElementById('btnHtml').addEventListener('click', ()=>{
+  const rows = orders.slice().sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+  const st = v => v==='yes'?'Да':v==='no'?'Нет':'—';
+  const photoRows = rows.map((o,i)=>({o,i})).filter(x=>x.o.photo);
+  let trs='', photos='';
+  rows.forEach((o,i)=>{
+    trs += `<tr id="r${i}"><td>${fmtDate(o.date)}</td><td>${esc(o.num)}</td><td>${esc(o.client)}</td>` +
+      EMPLOYEES.map(e=>`<td>${o.hours[e[0]]||0}</td>`).join('') +
+      `<td>${st(o.paid)}</td><td>${st(o.accrued)}</td><td>${o.photo?`<a class="ph-link" href="#f${i}">📷 фото</a>`:'—'}</td></tr>`;
+  });
+  photoRows.forEach((x,k)=>{
+    const prev = photoRows[k-1], next = photoRows[k+1];
+    photos += `<div class="ph" id="f${x.i}">
+      <div class="ph-nav">
+        <a class="btn2" href="#r${x.i}">↑ Назад к таблице</a>
+        ${prev?`<a class="btn2" href="#f${prev.i}">← Предыдущее фото</a>`:'<span class="btn2 dis">← Предыдущее фото</span>'}
+        <span class="cnt">${k+1} / ${photoRows.length}</span>
+        ${next?`<a class="btn2" href="#f${next.i}">Следующее фото →</a>`:'<span class="btn2 dis">Следующее фото →</span>'}
+      </div>
+      <h3>Заказ от ${fmtDate(x.o.date)} № ${esc(x.o.num)||'—'} — ${esc(x.o.client)}</h3>
+      <img src="${x.o.photo}">
+    </div>`;
+  });
+
+  let planTrs = '';
+  plans.forEach((p, idx)=>{
+    const empName = (EMPLOYEES.find(e=>e[0]===p.emp)||['','—'])[1];
+    planTrs += `<tr><td>${idx+1}</td><td>${fmtDate(p.date)}</td><td>${esc(p.task)}</td><td>${empName}</td><td>${p.priority==='urgent'?'Важное':'Обычное'}</td><td>${p.done?'Выполнено':'В работе'}</td></tr>`;
+  });
+
+  const doc = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Отчет — Гидравлика Сервис</title>
+  <style>body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:#0d1117;color:#e6edf3;padding:24px}
+  h1,h2{text-align:center;margin-top:20px}a{color:#58a6ff}table{border-collapse:collapse;width:100%;margin:20px 0}
+  th,td{border:1px solid #30363d;padding:8px 10px;text-align:center;font-size:14px}th{background:#161b22;color:#8b949e}
+  .ph{max-width:900px;margin:30px auto;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:18px}
+  .ph img{width:100%;border-radius:6px;display:block}
+  .ph-nav{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .btn2{background:#21262d;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:7px 14px;font-size:13.5px;text-decoration:none}
+  </style></head><body>
+  <h1>Отчет — «Гидравлика Сервис»</h1>
+  <p style="text-align:center;color:#8b949e">Сформирован: ${new Date().toLocaleString('ru-RU')}</p>
+  <h2>Заказы</h2>
+  <table><thead><tr><th>Дата</th><th>№ заказа</th><th>Клиент</th>${EMPLOYEES.map(e=>`<th>${e[1]}</th>`).join('')}<th>Оплачено</th><th>Начислено</th><th>Фото</th></tr></thead><tbody>${trs}</tbody></table>
+  <h2>Планы и задачи</h2>
+  <table><thead><tr><th>№</th><th>Дата</th><th>Задача</th><th>Ответственный</th><th>Приоритет</th><th>Статус</th></tr></thead><tbody>${planTrs||'<tr><td colspan="6">Нет планов</td></tr>'}</tbody></table>
+  <h2>Фото актов</h2>${photos||'<p style="text-align:center;color:#8b949e">Фото не приложены.</p>'}
+  </body></html>`;
+  
+  const blob = new Blob([doc], {type:'text/html;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Отчет_Гидравлика_Сервис.html';
+  document.body.appendChild(a); a.click(); a.remove();
+});
+
+/* Экспорт в Excel */
+const CRC_TABLE = (()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++){ c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); } t[n]=c>>>0; } return t; })();
+function crc32(u8){ let c=0xFFFFFFFF; for(let i=0;i<u8.length;i++){ c=CRC_TABLE[(c^u8[i])&0xFF]^(c>>>8); } return (c^0xFFFFFFFF)>>>0; }
+function str2u8(s){ return new TextEncoder().encode(s); }
+
+function zipStore(files){
+  const enc=new TextEncoder(); const parts=[]; const central=[];
+  let offset=0; const dosTime=0x6020, dosDate=0x5821;
+  for(const f of files){
+    const nameBytes=enc.encode(f.name); const crc=crc32(f.data);
+    const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true); lh.setUint16(4,20,true); lh.setUint16(6,0,true); lh.setUint16(8,0,true);
+    lh.setUint16(10,dosTime,true); lh.setUint16(12,dosDate,true);
+    lh.setUint32(14,crc,true); lh.setUint32(18,f.data.length,true); lh.setUint32(22,f.data.length,true);
+    lh.setUint16(26,nameBytes.length,true); lh.setUint16(28,0,true);
+    parts.push(new Uint8Array(lh.buffer),nameBytes,f.data);
+    const ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true); ch.setUint16(4,20,true); ch.setUint16(6,20,true); ch.setUint16(8,0,true);
+    ch.setUint16(12,dosTime,true); ch.setUint16(14,dosDate,true);
+    ch.setUint32(16,crc,true); ch.setUint32(20,f.data.length,true); ch.setUint32(24,f.data.length,true);
+    ch.setUint16(28,nameBytes.length,true); ch.setUint16(30,0,true); ch.setUint16(32,0,true);
+    ch.setUint16(34,0,true); ch.setUint32(38,0,true); ch.setUint42(offset,true);
+    central.push(new Uint8Array(ch.buffer),nameBytes);
+    offset+=30+nameBytes.length+f.data.length;
+  }
+  let cdSize=0; central.forEach(p=>cdSize+=p.length);
+  const end=new DataView(new ArrayBuffer(22));
+  end.setUint32(0,0x06054b50,true);
+  end.setUint16(8,files.length,true); end.setUint16(10,files.length,true);
+  end.setUint32(12,cdSize,true); end.setUint32(16,offset,true);
+  const all=[...parts,...central,new Uint8Array(end.buffer)];
+  const total=all.reduce((s,p)=>s+p.length,0);
+  const out=new Uint8Array(total); let pos=0;
+  for(const p of all){ out.set(p,pos); pos+=p.length; }
+  return out;
+}
+
+function xesc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;'); }
+function colLetter(i){ let s=''; i++; while(i>0){ const m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26);} return s; }
+function cellXml(r,c,val){
+  if(val===null||val===undefined||val==='') return '';
+  const ref=colLetter(c)+r;
+  if(typeof val==='number' && isFinite(val)) return '<c r="'+ref+'"><v>'+val+'</v></c>';
+  return '<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+xesc(val)+'</t></is></c>';
+}
+function sheetXml(rows, hyperlinks){
+  let s='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
+  rows.forEach((row,i)=>{ s+='<row r="'+(i+1)+'">'+row.map((v,c)=>cellXml(i+1,c,v)).join('')+'</row>'; });
+  s+='</sheetData>';
+  if(hyperlinks&&hyperlinks.length){
+    s+='<hyperlinks>'+hyperlinks.map(h=>'<hyperlink ref="'+h.ref+'" location="'+xesc(h.location)+'" display="'+xesc(h.display)+'"/>').join('')+'</hyperlinks>';
+  }
+  s+='</worksheet>';
+  return s;
+}
+
+function buildXlsx(){
+  const rows=orders.slice().sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+  const st=v=>v==='yes'?'Да':v==='no'?'Нет':'';
+
+  const CHUNK=30000;
+  const photoRows=[['№','Дата','№ заказа','Клиент','Часть','Фото (base64)']];
+  const photoRowOf={};
+  let s2=2;
+  rows.forEach((o,k)=>{
+    if(!o.photo) return;
+    photoRowOf[o.id]=s2;
+    for(let i=0,n=1;i<o.photo.length;i+=CHUNK,n++){
+      photoRows.push([n===1?k+1:'', fmtDate(o.date), o.num, o.client, n, o.photo.slice(i,i+CHUNK)]);
+      s2++;
+    }
+  });
+
+  const head=['Дата','№ заказа','Клиент',...EMPLOYEES.map(e=>e[1]),'Хозяйство оплатило','Начислено','Фото акта'];
+  const aoa=[head]; const links=[];
+  rows.forEach(o=>{
+    const row=[fmtDate(o.date), o.num, o.client, ...EMPLOYEES.map(e=>parseFloat(o.hours[e[0]])||0), st(o.paid), st(o.accrued)];
+    if(photoRowOf[o.id]){
+      row.push('Открыть фото →');
+      links.push({ref:'L'+(aoa.length+1), location:"'ФОТО_АКТОВ'!A"+photoRowOf[o.id], display:'Открыть фото'});
+    } else row.push('');
+    aoa.push(row);
+  });
+
+  // Лист Планы
+  const planRows=[['№','Дата/Срок','Задача','Ответственный','Приоритет','Статус']];
+  plans.forEach((p, idx)=>{
+    const empName = (EMPLOYEES.find(e=>e[0]===p.emp)||['',''])[1];
+    planRows.push([idx+1, fmtDate(p.date), p.task, empName, p.priority==='urgent'?'Важное':'Обычное', p.done?'Выполнено':'В работе']);
+  });
+
+  const files=[
+    {name:'[Content_Types].xml', data:str2u8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>')},
+    {name:'_rels/.rels', data:str2u8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>')},
+    {name:'xl/workbook.xml', data:str2u8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Заказы" sheetId="1" r:id="rId1"/><sheet name="Планы" sheetId="2" r:id="rId2"/><sheet name="ФОТО_АКТОВ" sheetId="3" r:id="rId3"/></sheets></workbook>')},
+    {name:'xl/_rels/workbook.xml.rels', data:str2u8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>')},
+    {name:'xl/styles.xml', data:str2u8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts><fills count="1"><fill><patternFill patternType="none"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>')},
+    {name:'xl/worksheets/sheet1.xml', data:str2u8(sheetXml(aoa, links))},
+    {name:'xl/worksheets/sheet2.xml', data:str2u8(sheetXml(planRows, null))},
+    {name:'xl/worksheets/sheet3.xml', data:str2u8(sheetXml(photoRows, null))},
+  ];
+  return zipStore(files);
+}
+
+document.getElementById('btnExcel').addEventListener('click', ()=>{
+  try{
+    const u8=buildXlsx();
+    const blob=new Blob([u8],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='Отчет_Гидравлика_Сервис.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  }catch(err){ alert('⚠️ Ошибка экспорта Excel: '+err.message); }
+});
+
+/* Инициализация */
+document.getElementById('empHead').innerHTML = EMPLOYEES.map(e=>`<th>${e[1]}</th>`).join('');
+load();
+renderAll();
+</script>
+</body>
+</html>
