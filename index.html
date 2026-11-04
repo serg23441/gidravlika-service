@@ -484,6 +484,48 @@
     display: inline-flex; align-items: center; gap: 4px;
   }
   .btn-lock:hover { color: var(--text); border-color: var(--muted); }
+
+  /* Интерактивная полоска прогресса загрузки БД */
+  .db-progress-bar-wrap {
+    position: sticky; top: 52px; left: 0; right: 0; width: 100%; height: 3.5px;
+    background: transparent; z-index: 49; overflow: hidden; pointer-events: none;
+  }
+  .db-progress-bar {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #1f6feb, #58a6ff, #3fb950);
+    box-shadow: 0 0 10px rgba(88,166,255,0.8);
+    transition: width 0.3s ease, opacity 0.5s ease;
+  }
+  .db-progress-bar.loading {
+    width: 75%;
+    animation: pulseProgress 1.5s infinite ease-in-out;
+  }
+  @keyframes pulseProgress {
+    0% { width: 25%; opacity: 0.6; }
+    50% { width: 85%; opacity: 1; }
+    100% { width: 65%; opacity: 0.7; }
+  }
+  .db-progress-bar.done {
+    width: 100% !important;
+    background: #3fb950 !important;
+    box-shadow: 0 0 12px rgba(63,185,80,0.9);
+    animation: none;
+  }
+  .db-progress-bar.hide {
+    opacity: 0;
+  }
+
+  /* Индикатор загрузки внутри таблицы */
+  .table-loader-box {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 36px 20px; gap: 12px; color: var(--muted); font-size: 14.5px;
+  }
+  .table-loader-spinner {
+    width: 28px; height: 28px; border: 3px solid rgba(88,166,255,0.2);
+    border-top-color: var(--blue); border-radius: 50%;
+    animation: spinLoader 0.8s linear infinite;
+  }
+  @keyframes spinLoader { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -516,6 +558,7 @@
 
   <button class="btn-install" id="btnInstall">📲 Установить на экран</button>
 </header>
+<div class="db-progress-bar-wrap"><div class="db-progress-bar loading" id="dbProgressBar"></div></div>
 
 <div class="page">
   <nav class="tabs">
@@ -725,6 +768,7 @@ const firebaseConfig = {
 
 let dbRef = null;
 let isConnected = false;
+let isCloudLoaded = false;
 
 try {
   if (typeof firebase !== 'undefined') {
@@ -812,6 +856,23 @@ function loadCachedData(){
    СИНХРОНИЗАЦИЯ С ОБЛАКОМ FIREBASE
    ========================================================= */
 let saveTimer = null;
+
+function setProgress(state){
+  const bar = document.getElementById('dbProgressBar');
+  if(!bar) return;
+  if(state === 'loading'){
+    bar.className = 'db-progress-bar loading';
+  } else if(state === 'done'){
+    bar.className = 'db-progress-bar done';
+    setTimeout(() => {
+      bar.classList.add('hide');
+      setTimeout(() => { bar.className = 'db-progress-bar'; bar.style.width = '0%'; }, 500);
+    }, 400);
+  } else if(state === 'idle'){
+    bar.className = 'db-progress-bar hide';
+  }
+}
+
 function saveToLocalCache(){
   try {
     localStorage.setItem('gidravlika_cache', JSON.stringify({ orders, plans, collapsed, seq }));
@@ -828,6 +889,7 @@ function saveToLocalCache(){
 function triggerSync(){
   const ind = document.getElementById('saveIndicator');
   if(ind){ ind.className = 'save-indicator saving'; ind.textContent = '⏳ Сохранение...'; }
+  setProgress('loading');
 
   saveToLocalCache();
 
@@ -841,6 +903,7 @@ function triggerSync(){
       seq: seq,
       updatedAt: Date.now()
     }).then(() => {
+      setProgress('done');
       if(ind){ ind.className = 'save-indicator cloud'; ind.textContent = '🟢 Облако онлайн ' + new Date().toLocaleTimeString('ru-RU'); }
     }).catch(err => {
       console.error("Save error:", err);
@@ -869,6 +932,8 @@ function startCloudListener(){
   });
 
   dbRef.on('value', snapshot => {
+    isCloudLoaded = true;
+    setProgress('done');
     const val = snapshot.val();
     if(val && val.orders){
       orders = val.orders || [];
@@ -889,6 +954,7 @@ function startCloudListener(){
     }
   }, err => {
     console.error("Cloud error:", err);
+    setProgress('idle');
     if(ind){ ind.className = 'save-indicator error'; ind.textContent = '⚠️ Ошибка доступа в БД'; }
   });
 }
@@ -971,8 +1037,10 @@ function renderOrders(){
     }
   }
 
-  document.getElementById('tbody').innerHTML = html ||
-    '<tr><td colspan="13" style="text-align:center;padding:32px;color:var(--muted)">Ничего не найдено — добавьте заказ или измените фильтр</td></tr>';
+  const emptyContent = !isCloudLoaded && orders.length === 0
+    ? '<tr><td colspan="13"><div class="table-loader-box"><div class="table-loader-spinner"></div><span>Загрузка базы данных из облака...</span></div></td></tr>'
+    : '<tr><td colspan="13" style="text-align:center;padding:32px;color:var(--muted)">Ничего не найдено — добавьте заказ или измените фильтр</td></tr>';
+  document.getElementById('tbody').innerHTML = html || emptyContent;
 
   updateTotals(sorted);
   document.getElementById('sortDateIcon').textContent = dateSortOrder === 'asc' ? '▲ (по возрастанию)' : '▼ (по убыванию)';
