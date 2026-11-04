@@ -138,6 +138,7 @@
     float: right; font-size: 12px; color: var(--muted); font-weight: normal; margin-left: 10px;
   }
 
+  /* Инпуты таблицы */
   input[type="date"], input[type="text"], input[type="number"], select {
     width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
     color: var(--text); padding: 8px 10px; font-size: 14px; outline: none; min-height: 38px;
@@ -235,101 +236,148 @@
     margin-bottom: 6px; align-items: center; justify-content: flex-end; gap: 4px;
   }
 
-  /* Интерактивный календарь в планах */
-  .plans-calendar-card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-    padding: 16px 18px; margin-bottom: 18px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  /* ---------------------------------------------------------
+     КАЛЕНДАРЬ НА 6 МЕСЯЦЕВ В ПЛАНАХ
+     --------------------------------------------------------- */
+  .six-month-container {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
   }
-  .cal-header {
+  .sm-header {
     display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 16px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
   }
-  .cal-title-wrap {
-    display: flex; align-items: center; gap: 8px;
+  .sm-title-group {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   }
-  .cal-title {
-    font-size: 16px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; min-width: 160px;
+  .sm-main-title {
+    font-size: 16px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px;
   }
-  .cal-nav-btn {
-    background: var(--panel2); border: 1px solid var(--border); border-radius: 6px;
-    color: var(--text); padding: 5px 12px; font-size: 13px; font-weight: 600; cursor: pointer;
-    transition: all 0.2s;
+  .sm-range-badge {
+    font-size: 12px; color: var(--blue); background: rgba(56,139,253,0.12);
+    border: 1px solid rgba(56,139,253,0.3); padding: 3px 8px; border-radius: 6px; font-weight: 600;
   }
-  .cal-nav-btn:hover { border-color: var(--blue); color: var(--blue); }
-  .cal-legend {
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted);
+  .sm-nav-btns {
+    display: inline-flex; align-items: center; gap: 6px;
   }
-  .cal-legend-item { display: inline-flex; align-items: center; gap: 5px; }
-  .cal-legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-  .dot-urgent { background: var(--orange); box-shadow: 0 0 6px rgba(240,136,62,0.6); }
-  .dot-active { background: var(--blue); box-shadow: 0 0 6px rgba(88,166,255,0.6); }
+  .sm-btn {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    padding: 5px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .sm-btn:hover { border-color: var(--blue); color: var(--blue); }
+  
+  .sm-legend {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted);
+  }
+  .sm-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+  .sm-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .dot-urgent { background: var(--orange); box-shadow: 0 0 6px rgba(240,136,62,0.8); }
+  .dot-active { background: var(--blue); box-shadow: 0 0 6px rgba(88,166,255,0.7); }
   .dot-done   { background: #3fb950; }
 
-  .cal-grid {
-    display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+  /* Сетка из 6 месяцев */
+  .six-month-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
   }
-  .cal-weekday {
-    text-align: center; font-size: 11.5px; font-weight: 700; color: var(--muted);
-    padding: 6px 0; text-transform: uppercase; letter-spacing: 0.5px;
+  @media (max-width: 1100px) {
+    .six-month-grid { grid-template-columns: repeat(2, 1fr); }
   }
-  .cal-weekday.weekend { color: #f85149; }
-  
-  .cal-day {
-    position: relative; min-height: 52px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--bg); padding: 5px 6px; cursor: pointer; transition: all 0.2s ease;
-    display: flex; flex-direction: column; justify-content: space-between; user-select: none;
+  @media (max-width: 640px) {
+    .six-month-grid { grid-template-columns: 1fr; gap: 12px; }
+    .six-month-container { padding: 12px 10px; }
   }
-  .cal-day:hover:not(.empty) {
-    border-color: var(--blue); background: var(--panel2); transform: translateY(-1px);
+
+  /* Карточка месяца */
+  .sm-month-card {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 10px; display: flex; flex-direction: column; transition: border-color 0.2s;
   }
-  .cal-day.empty {
-    border-color: transparent; background: transparent; cursor: default;
-  }
-  .cal-day.today {
-    border-color: #388bfd; box-shadow: 0 0 0 1px #388bfd inset;
-  }
-  .cal-day.selected {
-    border-color: var(--orange) !important; background: rgba(240,136,62,0.14) !important;
-    box-shadow: 0 0 0 2px var(--orange) inset;
-  }
-  .cal-day-num {
-    font-size: 13px; font-weight: 600; color: var(--text); line-height: 1;
+  .sm-month-card:hover { border-color: rgba(88,166,255,0.4); }
+  .sm-month-header {
     display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(48,54,61,0.6);
   }
-  .cal-day.today .cal-day-num { color: var(--blue); font-weight: 800; }
-  .cal-day.weekend .cal-day-num { color: #ff7b72; }
+  .sm-month-name {
+    font-size: 13.5px; font-weight: 700; color: var(--text); text-transform: capitalize;
+  }
+  .sm-month-count {
+    font-size: 11px; padding: 1px 6px; border-radius: 10px; font-weight: 700;
+  }
+  .sm-month-count.has { background: rgba(56,139,253,0.18); color: var(--blue); border: 1px solid rgba(56,139,253,0.3); }
+  .sm-month-count.none { color: var(--muted); opacity: 0.6; }
 
-  /* Подсветка дней с планами */
-  .cal-day.has-plans {
-    border-color: rgba(88,166,255,0.45); background: rgba(56,139,253,0.06);
+  /* Дни недели и сетка чисел */
+  .sm-weekdays-row {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 4px;
   }
-  .cal-day.has-urgent {
-    border-color: rgba(240,136,62,0.6); background: rgba(240,136,62,0.1);
+  .sm-wd {
+    text-align: center; font-size: 10.5px; font-weight: 700; color: var(--muted);
+    padding: 2px 0; text-transform: uppercase;
   }
-  .cal-day.all-done {
-    border-color: rgba(46,160,67,0.45); background: rgba(46,160,67,0.06);
+  .sm-wd.wknd { color: #f85149; }
+
+  .sm-days-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
+  }
+  .sm-cell {
+    aspect-ratio: 1; min-height: 28px; border-radius: 6px; border: 1px solid transparent;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 11.5px; font-weight: 600; color: var(--text); cursor: pointer;
+    position: relative; user-select: none; transition: all 0.15s ease;
+  }
+  .sm-cell.empty { cursor: default; }
+  .sm-cell:hover:not(.empty) {
+    background: var(--panel2); border-color: var(--blue); transform: scale(1.08); z-index: 2;
+  }
+  .sm-cell.wknd:not(.empty) { color: #ff7b72; }
+  
+  .sm-cell.is-today {
+    border-color: #58a6ff !important; font-weight: 800; background: rgba(56,139,253,0.12);
+  }
+  .sm-cell.is-selected {
+    border-color: var(--orange) !important; background: rgba(240,136,62,0.25) !important;
+    color: #fff !important; font-weight: 800; transform: scale(1.1); z-index: 3;
+    box-shadow: 0 0 8px rgba(240,136,62,0.6);
   }
 
-  .cal-badge-pill {
-    font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; line-height: 1.2;
-    display: inline-block; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; margin-top: 4px;
+  /* Цветовая индикация дней */
+  .sm-cell.has-urgent {
+    background: rgba(240,136,62,0.18); border-color: var(--orange); color: #fff; font-weight: 700;
   }
-  .cal-badge-pill.urgent { background: rgba(240,136,62,0.25); color: var(--orange); border: 1px solid rgba(240,136,62,0.4); }
-  .cal-badge-pill.active { background: rgba(88,166,255,0.22); color: var(--blue); border: 1px solid rgba(88,166,255,0.35); }
-  .cal-badge-pill.done   { background: rgba(46,160,67,0.2); color: #3fb950; border: 1px solid rgba(46,160,67,0.35); }
+  .sm-cell.has-active {
+    background: rgba(88,166,255,0.16); border-color: rgba(88,166,255,0.65); color: #fff; font-weight: 700;
+  }
+  .sm-cell.all-done {
+    background: rgba(46,160,67,0.15); border-color: rgba(46,160,67,0.55); color: #7ee787;
+  }
 
-  /* Полоса активного фильтра */
-  .cal-filter-banner {
+  .sm-indicator {
+    position: absolute; bottom: 2px; width: 4px; height: 4px; border-radius: 50%;
+  }
+  .sm-cell.has-urgent .sm-indicator { background: var(--orange); }
+  .sm-cell.has-active .sm-indicator { background: var(--blue); }
+  .sm-cell.all-done .sm-indicator { background: #3fb950; }
+
+  /* Баннер выбранной даты */
+  .sm-filter-bar {
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
-    background: rgba(240,136,62,0.12); border: 1px solid var(--orange); border-radius: 6px;
-    padding: 8px 12px; margin-top: 12px; font-size: 13px; color: var(--text);
+    background: rgba(240,136,62,0.12); border: 1px solid var(--orange); border-radius: 8px;
+    padding: 10px 14px; margin-top: 14px; font-size: 13.5px;
   }
-  .cal-filter-banner strong { color: var(--orange); }
-  .cal-filter-reset {
-    background: var(--panel2); border: 1px solid var(--border); border-radius: 4px;
-    color: var(--text); padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+  .sm-filter-bar strong { color: var(--orange); }
+  .sm-filter-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .sm-filter-reset-btn {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;
   }
-  .cal-filter-reset:hover { border-color: var(--red); color: var(--red); }
+  .sm-filter-reset-btn:hover { border-color: var(--red); color: var(--red); }
+  .sm-filter-add-btn {
+    background: var(--green); border: 1px solid var(--green2); color: #fff;
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .sm-filter-add-btn:hover { filter: brightness(1.15); }
 
   /* Lightbox */
   .lightbox {
@@ -435,11 +483,6 @@
     .card .lbl2 { font-size: 11.5px; }
     .lb-body img { max-width: 86vw; max-height: 65vh; }
     .lb-nav { width: 38px; height: 38px; font-size: 20px; }
-    .plans-calendar-card { padding: 12px 10px; }
-    .cal-day { min-height: 44px; padding: 4px; }
-    .cal-day-num { font-size: 12px; }
-    .cal-badge-pill { font-size: 9px; padding: 1px 3px; }
-    .cal-legend { font-size: 11px; gap: 8px; }
   }
 
   @media (max-width: 480px) {
@@ -539,30 +582,37 @@
 
   <!-- Вкладка: Планы -->
   <div id="view-plans" class="hidden">
-    <!-- Интерактивный календарь планов -->
-    <div class="plans-calendar-card">
-      <div class="cal-header">
-        <div class="cal-title-wrap">
-          <button class="cal-nav-btn" id="calPrevMonth" title="Предыдущий месяц">‹</button>
-          <div class="cal-title" id="calTitle">📅 Месяц Год</div>
-          <button class="cal-nav-btn" id="calNextMonth" title="Следующий месяц">›</button>
-          <button class="cal-nav-btn" id="calTodayBtn" style="font-size:12px;padding:5px 8px;">Сегодня</button>
+    <!-- График планов на 6 месяцев -->
+    <div class="six-month-container">
+      <div class="sm-header">
+        <div class="sm-title-group">
+          <div class="sm-main-title">📅 График планов на 6 месяцев</div>
+          <span class="sm-range-badge" id="smRangeLabel">Загрузка...</span>
         </div>
 
-        <div class="cal-legend">
-          <span class="cal-legend-item"><span class="cal-legend-dot dot-urgent"></span> Срочный</span>
-          <span class="cal-legend-item"><span class="cal-legend-dot dot-active"></span> В работе</span>
-          <span class="cal-legend-item"><span class="cal-legend-dot dot-done"></span> Выполнено</span>
+        <div class="sm-nav-btns">
+          <button class="sm-btn" id="smPrev6" title="Предыдущие 6 месяцев">‹ 6 мес.</button>
+          <button class="sm-btn" id="smToday" title="Текущий месяц">Сегодня</button>
+          <button class="sm-btn" id="smNext6" title="Следующие 6 месяцев">6 мес. ›</button>
+        </div>
+
+        <div class="sm-legend">
+          <span class="sm-legend-item"><span class="sm-dot dot-urgent"></span> Срочный</span>
+          <span class="sm-legend-item"><span class="sm-dot dot-active"></span> В работе</span>
+          <span class="sm-legend-item"><span class="sm-dot dot-done"></span> Выполнено</span>
         </div>
       </div>
 
-      <!-- Сетка дней календаря -->
-      <div class="cal-grid" id="calGrid"></div>
+      <!-- Сетка 6 месяцев -->
+      <div class="six-month-grid" id="sixMonthGrid"></div>
 
-      <!-- Информационная плашка активного фильтра по выбранной дате -->
-      <div class="cal-filter-banner" id="calFilterBanner" style="display:none;">
-        <div>Показаны задачи на дату: <strong id="calSelectedDateText"></strong></div>
-        <button class="cal-filter-reset" id="calResetFilter">✕ Показать все планы</button>
+      <!-- Плашка активного фильтра по выбранной дате -->
+      <div class="sm-filter-bar" id="smFilterBar" style="display:none;">
+        <div>Показаны задачи на дату: <strong id="smSelectedDateText"></strong></div>
+        <div class="sm-filter-actions">
+          <button class="sm-filter-add-btn" id="smAddForSelectedDate">+ Добавить задачу на этот день</button>
+          <button class="sm-filter-reset-btn" id="smResetFilter">✕ Показать все планы</button>
+        </div>
       </div>
     </div>
 
@@ -700,10 +750,15 @@ let dateSortOrder = 'asc';
 let monthSortOrder = 'desc';
 const search = { num:'', client:'' };
 
-// Состояние календаря планов
-let calYear = new Date().getFullYear();
-let calMonth = new Date().getMonth(); // 0-indexed
-let calSelectedDate = null; // 'YYYY-MM-DD' или null
+// Состояние 6-месячного календаря
+let calBaseDate = new Date(); // Месяц старта 6-месячной сетки
+let calSelectedDate = null;  // Выбранная дата фильтра 'YYYY-MM-DD'
+
+const MONTH_NAMES_FULL = [
+  'Январь','Февраль','Март','Апрель','Май','Июнь',
+  'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'
+];
+const WEEKDAYS_SHORT = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function emptyHours(){ const h={}; EMPLOYEES.forEach(e => { h[e[0]]=0; }); return h; }
@@ -828,7 +883,7 @@ function startCloudListener(){
       if (!isTyping) {
         renderAll();
       } else {
-        renderCalendar();
+        renderSixMonthCalendar();
       }
       if(ind){ ind.className = 'save-indicator cloud'; ind.textContent = '🟢 Облако онлайн ' + new Date().toLocaleTimeString('ru-RU'); }
     } else {
@@ -937,22 +992,13 @@ function updateTotals(sortedList){
 }
 
 /* =========================================================
-   ИНТЕРАКТИВНЫЙ КАЛЕНДАРЬ ПЛАНОВ С ПОДСВЕТКОЙ ДАТ
+   ИНТЕРАКТИВНЫЙ КАЛЕНДАРЬ НА 6 МЕСЯЦЕВ
    ========================================================= */
-const MONTH_NAMES_RU = [
-  'Январь','Февраль','Март','Апрель','Май','Июнь',
-  'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'
-];
-const WEEKDAYS_RU = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+function renderSixMonthCalendar(){
+  const gridEl = document.getElementById('sixMonthGrid');
+  const rangeLabelEl = document.getElementById('smRangeLabel');
+  if(!gridEl || !rangeLabelEl) return;
 
-function renderCalendar(){
-  const titleEl = document.getElementById('calTitle');
-  const gridEl = document.getElementById('calGrid');
-  if(!titleEl || !gridEl) return;
-
-  titleEl.textContent = `📅 ${MONTH_NAMES_RU[calMonth]} ${calYear}`;
-
-  // Группируем планы по дате YYYY-MM-DD
   const plansByDate = {};
   plans.forEach(p => {
     if(!p.date) return;
@@ -961,94 +1007,111 @@ function renderCalendar(){
   });
 
   const todayStr = todayISO();
-  let html = '';
+  const startY = calBaseDate.getFullYear();
+  const startM = calBaseDate.getMonth();
 
-  // Заголовки дней недели
-  WEEKDAYS_RU.forEach((w, idx) => {
-    const isWk = (idx >= 5);
-    html += `<div class="cal-weekday ${isWk?'weekend':''}">${w}</div>`;
-  });
+  const endMonthObj = new Date(startY, startM + 5, 1);
+  rangeLabelEl.textContent = `${MONTH_NAMES_FULL[startM]} ${startY} — ${MONTH_NAMES_FULL[endMonthObj.getMonth()]} ${endMonthObj.getFullYear()}`;
 
-  // Расчет первого дня месяца (0 = Вс, превращаем в Пн=0..Вс=6)
-  const firstDayObj = new Date(calYear, calMonth, 1);
-  let firstDayIndex = firstDayObj.getDay() - 1;
-  if(firstDayIndex === -1) firstDayIndex = 6;
+  let cardsHtml = '';
 
-  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  for(let offset = 0; offset < 6; offset++){
+    const mDate = new Date(startY, startM + offset, 1);
+    const y = mDate.getFullYear();
+    const m = mDate.getMonth();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
 
-  // Пустые ячейки до 1-го числа
-  for(let i=0; i<firstDayIndex; i++){
-    html += '<div class="cal-day empty"></div>';
-  }
+    let firstWd = mDate.getDay() - 1;
+    if(firstWd === -1) firstWd = 6;
 
-  // Дни месяца
-  for(let d=1; d<=daysInMonth; d++){
-    const dayStr = String(d).padStart(2, '0');
-    const monthStr = String(calMonth + 1).padStart(2, '0');
-    const dateISO = `${calYear}-${monthStr}-${dayStr}`;
-
-    const dayOfWeek = (firstDayIndex + d - 1) % 7;
-    const isWeekend = (dayOfWeek === 5 || dayOfWeek === 6);
-    const isToday = (dateISO === todayStr);
-    const isSelected = (dateISO === calSelectedDate);
-
-    const dayPlans = plansByDate[dateISO] || [];
-    const count = dayPlans.length;
-
-    let dayClass = 'cal-day';
-    if(isWeekend) dayClass += ' weekend';
-    if(isToday) dayClass += ' today';
-    if(isSelected) dayClass += ' selected';
-
-    let badgeHtml = '';
-    if(count > 0){
-      const hasUrgent = dayPlans.some(p => p.priority === 'urgent' && !p.done);
-      const hasActive = dayPlans.some(p => !p.done);
-      const allDone = dayPlans.every(p => p.done);
-
-      if(hasUrgent){
-        dayClass += ' has-urgent';
-        badgeHtml = `<span class="cal-badge-pill urgent" title="Есть срочные задачи">🔥 ${count}</span>`;
-      } else if(hasActive){
-        dayClass += ' has-plans';
-        badgeHtml = `<span class="cal-badge-pill active" title="Задач в работе">${count} пл.</span>`;
-      } else if(allDone){
-        dayClass += ' all-done';
-        badgeHtml = `<span class="cal-badge-pill done" title="Все задачи выполнены">✓ ${count}</span>`;
-      }
+    let monthTotalPlans = 0;
+    for(let d = 1; d <= daysInMonth; d++){
+      const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      if(plansByDate[dateStr]) monthTotalPlans += plansByDate[dateStr].length;
     }
 
-    html += `<div class="${dayClass}" data-cal-date="${dateISO}" title="${count>0 ? `Планов на дату: ${count}` : 'Нажмите для фильтрации / добавления'}">
-      <div class="cal-day-num">
+    const badgeClass = monthTotalPlans > 0 ? 'sm-month-count has' : 'sm-month-count none';
+    const badgeText = monthTotalPlans > 0 ? `${monthTotalPlans} пл.` : '—';
+
+    let mHtml = `<div class="sm-month-card">
+      <div class="sm-month-header">
+        <span class="sm-month-name">${MONTH_NAMES_FULL[m]} ${y}</span>
+        <span class="${badgeClass}">${badgeText}</span>
+      </div>
+      <div class="sm-weekdays-row">
+        ${WEEKDAYS_SHORT.map((wd, idx) => `<div class="sm-wd ${idx>=5?'wknd':''}">${wd}</div>`).join('')}
+      </div>
+      <div class="sm-days-grid">`;
+
+    for(let empty = 0; empty < firstWd; empty++){
+      mHtml += '<div class="sm-cell empty"></div>';
+    }
+
+    for(let d = 1; d <= daysInMonth; d++){
+      const dayStr = String(d).padStart(2, '0');
+      const monthStr = String(m + 1).padStart(2, '0');
+      const dateISO = `${y}-${monthStr}-${dayStr}`;
+
+      const dayOfWeek = (firstWd + d - 1) % 7;
+      const isWknd = (dayOfWeek === 5 || dayOfWeek === 6);
+      const isToday = (dateISO === todayStr);
+      const isSelected = (dateISO === calSelectedDate);
+
+      const dayPlans = plansByDate[dateISO] || [];
+      const count = dayPlans.length;
+
+      let cellClass = 'sm-cell';
+      if(isWknd) cellClass += ' wknd';
+      if(isToday) cellClass += ' is-today';
+      if(isSelected) cellClass += ' is-selected';
+
+      let indicatorHtml = '';
+      if(count > 0){
+        const hasUrgent = dayPlans.some(p => p.priority === 'urgent' && !p.done);
+        const hasActive = dayPlans.some(p => !p.done);
+        const allDone = dayPlans.every(p => p.done);
+
+        if(hasUrgent){
+          cellClass += ' has-urgent';
+        } else if(hasActive){
+          cellClass += ' has-active';
+        } else if(allDone){
+          cellClass += ' all-done';
+        }
+        indicatorHtml = '<span class="sm-indicator"></span>';
+      }
+
+      mHtml += `<div class="${cellClass}" data-date="${dateISO}" title="${count>0 ? `Планов на ${fmtDate(dateISO)}: ${count}` : fmtDate(dateISO)}">
         <span>${d}</span>
-      </div>
-      <div class="cal-dots-row">
-        ${badgeHtml}
-      </div>
-    </div>`;
+        ${indicatorHtml}
+      </div>`;
+    }
+
+    mHtml += '</div></div>';
+    cardsHtml += mHtml;
   }
 
-  gridEl.innerHTML = html;
+  gridEl.innerHTML = cardsHtml;
 
-  // Плашка выбранного фильтра
-  const filterBanner = document.getElementById('calFilterBanner');
-  const selDateText = document.getElementById('calSelectedDateText');
-  if(calSelectedDate){
-    filterBanner.style.display = 'flex';
-    selDateText.textContent = fmtDate(calSelectedDate);
-  } else {
-    filterBanner.style.display = 'none';
+  const filterBar = document.getElementById('smFilterBar');
+  const selDateText = document.getElementById('smSelectedDateText');
+  if(filterBar && selDateText){
+    if(calSelectedDate){
+      filterBar.style.display = 'flex';
+      selDateText.textContent = fmtDate(calSelectedDate);
+    } else {
+      filterBar.style.display = 'none';
+    }
   }
 }
 
 /* =========================================================
-   ТАБЛИЦА ПЛАНОВ (УЧИТЫВАЕТ ВЫБРАННУЮ В КАЛЕНДАРЕ ДАТУ)
+   ТАБЛИЦА ПЛАНОВ (С УЧЕТОМ КАЛЕНДАРЯ)
    ========================================================= */
 function renderPlans(){
-  renderCalendar();
+  renderSixMonthCalendar();
 
-  // Если в календаре выбрана дата, фильтруем таблицу по ней
-  let displayPlans = plans.map((p, originalIndex) => ({ p, originalIndex }));
+  let displayPlans = plans.map((p, idx) => ({ p, originalIndex: idx }));
   if(calSelectedDate){
     displayPlans = displayPlans.filter(item => item.p.date === calSelectedDate);
   }
@@ -1056,9 +1119,9 @@ function renderPlans(){
   let html = '';
   displayPlans.forEach(item => {
     const p = item.p;
-    const index = item.originalIndex;
+    const i = item.originalIndex;
     html += `<tr class="${p.priority==='urgent'?'plan-row-urgent ':''}${p.done?'plan-row-done':''}">
-      <td style="text-align:center">${index+1}</td>
+      <td style="text-align:center">${i+1}</td>
       <td><input type="date" data-plan-id="${p.id}" data-plan-field="date" value="${esc(p.date)}"></td>
       <td><input type="text" placeholder="Задача / план…" data-plan-id="${p.id}" data-plan-field="task" value="${esc(p.task)}"></td>
       <td><input type="text" placeholder="Комментарий / примечание…" data-plan-id="${p.id}" data-plan-field="comment" value="${esc(p.comment||'')}"></td>
@@ -1069,11 +1132,11 @@ function renderPlans(){
     </tr>`;
   });
 
-  const emptyText = calSelectedDate
-    ? `Нет задач на дату ${fmtDate(calSelectedDate)}. Нажмите «+ Добавить план» для создания задачи на этот день.`
+  const emptyMsg = calSelectedDate 
+    ? `Нет задач на дату ${fmtDate(calSelectedDate)}. Нажмите «+ Добавить задачу на этот день» выше.`
     : 'Нет планов. Нажмите «+ Добавить план» для создания.';
 
-  document.getElementById('tbodyPlans').innerHTML = html || `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">${emptyText}</td></tr>`;
+  document.getElementById('tbodyPlans').innerHTML = html || `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">${emptyMsg}</td></tr>`;
   document.getElementById('plansBadge').textContent = plans.filter(p=>!p.done).length;
 }
 
@@ -1231,34 +1294,30 @@ document.getElementById('btnToggleMonthSort').addEventListener('click', () => {
 });
 
 /* =========================================================
-   ОБРАБОТЧИКИ СОБЫТИЙ КАЛЕНДАРЯ
+   ОБРАБОТЧИКИ НАВИГАЦИИ И КЛИКОВ КАЛЕНДАРЯ НА 6 МЕСЯЦЕВ
    ========================================================= */
-document.getElementById('calPrevMonth').addEventListener('click', () => {
-  calMonth--;
-  if(calMonth < 0){ calMonth = 11; calYear--; }
-  renderCalendar();
+document.getElementById('smPrev6').addEventListener('click', () => {
+  calBaseDate.setMonth(calBaseDate.getMonth() - 6);
+  renderSixMonthCalendar();
 });
 
-document.getElementById('calNextMonth').addEventListener('click', () => {
-  calMonth++;
-  if(calMonth > 11){ calMonth = 0; calYear++; }
-  renderCalendar();
+document.getElementById('smNext6').addEventListener('click', () => {
+  calBaseDate.setMonth(calBaseDate.getMonth() + 6);
+  renderSixMonthCalendar();
 });
 
-document.getElementById('calTodayBtn').addEventListener('click', () => {
-  const now = new Date();
-  calYear = now.getFullYear();
-  calMonth = now.getMonth();
+document.getElementById('smToday').addEventListener('click', () => {
+  calBaseDate = new Date();
   calSelectedDate = todayISO();
   renderPlans();
 });
 
-document.getElementById('calGrid').addEventListener('click', e => {
-  const dayEl = e.target.closest('[data-cal-date]');
-  if(!dayEl || dayEl.classList.contains('empty')) return;
-  const clickedDate = dayEl.dataset.calDate;
-  
-  // Повторный клик снимает фильтр
+// Клик по дате в календаре для фильтрации
+document.getElementById('sixMonthGrid').addEventListener('click', e => {
+  const cell = e.target.closest('[data-date]');
+  if(!cell || cell.classList.contains('empty')) return;
+  const clickedDate = cell.dataset.date;
+
   if(calSelectedDate === clickedDate){
     calSelectedDate = null;
   } else {
@@ -1267,13 +1326,21 @@ document.getElementById('calGrid').addEventListener('click', e => {
   renderPlans();
 });
 
-document.getElementById('calResetFilter').addEventListener('click', () => {
+document.getElementById('smResetFilter').addEventListener('click', () => {
   calSelectedDate = null;
   renderPlans();
 });
 
+document.getElementById('smAddForSelectedDate').addEventListener('click', () => {
+  const targetDate = calSelectedDate || todayISO();
+  plans.push({ id:uid(), date:targetDate, task:'', comment:'', emp:'', priority:'normal', done:false });
+  triggerSync();
+  renderPlans();
+  renderSummary();
+});
+
 /* =========================================================
-   ОБРАБОТЧИКИ СОБЫТИЙ ТАБЛИЦЫ ПЛАНОВ
+   ОБРАБОТЧИКИ ПЛАНОВ
    ========================================================= */
 const tbodyPlans = document.getElementById('tbodyPlans');
 tbodyPlans.addEventListener('input', e => {
@@ -1291,7 +1358,7 @@ tbodyPlans.addEventListener('change', e => {
   if(p){
     if(el.dataset.planField === 'date'){
       p.date = el.value;
-      renderCalendar();
+      renderSixMonthCalendar();
     }
     else if(el.dataset.planField === 'emp') p.emp = el.value;
     triggerSync();
@@ -1393,7 +1460,7 @@ document.getElementById('fileInput').addEventListener('change', e => {
   reader.readAsDataURL(file);
 });
 
-/* Lightbox */
+/* Просмотр фото (Lightbox) */
 function openLightbox(id){
   const idx = viewPhotos.findIndex(o => o.id===id);
   if(idx<0) return;
@@ -1510,7 +1577,6 @@ document.getElementById('btnExcel').addEventListener('click', () => {
     console.warn('SheetJS error, fallback to HTML:', err);
   }
 
-  // Fallback
   try {
     const st = v => v==='yes'?'Да':v==='no'?'Нет':'—';
     let tableHtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
