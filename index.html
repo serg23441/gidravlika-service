@@ -10,13 +10,12 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>⚙️</text></svg>">
 
-<!-- Подключение Firebase (Realtime Database + Firestore) -->
+<!-- Подключение Firebase (минимальный и быстрый комплект без лишних библиотек) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<!-- SheetJS для выгрузки Excel (.xlsx) -->
-<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<!-- SheetJS загружается асинхронно, не блокируя запуск страницы -->
+<script defer src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
 <style>
   :root{
@@ -48,11 +47,11 @@
   .save-indicator {
     display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 12px;
     font-size: 12px; font-weight: 600; background: var(--panel2); border: 1px solid var(--border);
-    white-space: nowrap;
+    white-space: nowrap; transition: all 0.3s ease;
   }
-  .save-indicator.cloud { color: #3fb950; border-color: rgba(46,160,67,.5); background: rgba(46,160,67,.1); }
-  .save-indicator.saving { color: var(--orange); border-color: rgba(240,136,62,.5); }
-  .save-indicator.error { color: #ff7b72; border-color: rgba(248,81,73,.5); }
+  .save-indicator.cloud { color: #3fb950; border-color: rgba(46,160,67,.5); background: rgba(46,160,67,.12); }
+  .save-indicator.saving { color: var(--orange); border-color: rgba(240,136,62,.5); background: rgba(240,136,62,.1); }
+  .save-indicator.error { color: #ff7b72; border-color: rgba(248,81,73,.5); background: rgba(248,81,73,.1); }
 
   .btn-install {
     display: inline-flex; align-items: center; justify-content: center; gap: 5px;
@@ -178,6 +177,7 @@
   tfoot td {
     position: sticky; bottom: 0; background: var(--panel2); color: var(--text);
     font-weight: 700; font-size: 14px; text-align: center; padding: 12px 8px; border: 1px solid var(--border);
+    z-index: 9;
   }
   tfoot td.lbl { text-align: right; padding-right: 16px; font-size: 14.5px; }
 
@@ -229,7 +229,7 @@
 
   .scroll-hint {
     display: none; font-size: 12px; color: var(--muted); text-align: right;
-    margin-bottom: 6px; align-items: center; justify-content: flex-end;
+    margin-bottom: 6px; align-items: center; justify-content: flex-end; gap: 4px;
   }
 
   /* Lightbox */
@@ -311,7 +311,7 @@
   </div>
 
   <div class="nav-right">
-    <span class="save-indicator saving" id="saveIndicator">⏳ Подключение...</span>
+    <span class="save-indicator saving" id="saveIndicator">⏳ Синхронизация...</span>
   </div>
 
   <button class="btn-install" id="btnInstall">📲 Установить на экран</button>
@@ -383,9 +383,10 @@
         <thead>
           <tr class="head1">
             <th style="width:46px">№</th>
-            <th style="width:160px">Срок / Дата</th>
+            <th style="width:150px">Срок / Дата</th>
             <th>Описание задачи / Плана</th>
-            <th style="width:170px">Ответственный</th>
+            <th>Комментарий / Заметка</th>
+            <th style="width:160px">Ответственный</th>
             <th style="width:140px">Приоритет</th>
             <th style="width:140px">Выполнение</th>
             <th style="width:90px">Действия</th>
@@ -476,7 +477,6 @@ const EMPLOYEES = [
 
 /* =========================================================
    ПОДКЛЮЧЕНИЕ ОБЛАЧНОЙ БД FIREBASE
-   (Ключи проекта gidravlika-db)
    ========================================================= */
 const firebaseConfig = {
   apiKey: "AIzaSyC0xggogwJTt-tG0Yng3gZTGPYCQWdpJak",
@@ -489,9 +489,13 @@ const firebaseConfig = {
 };
 
 let dbRef = null;
+let isConnected = false;
+
 try {
-  firebase.initializeApp(firebaseConfig);
-  dbRef = firebase.database().ref('fleet_data');
+  if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    dbRef = firebase.database().ref('fleet_data');
+  }
 } catch(e) {
   console.error("Firebase init error:", e);
 }
@@ -539,10 +543,32 @@ function seed(){
     mk('2026-10-29','',{bystrov:3,veprev:2,zuykov:2},null,null)
   ];
   plans = [
-    { id:uid(), date:'2026-11-05', task:'Заказать комплект РВД и фильтрующие элементы', emp:'kovrizhnykh', priority:'urgent', done:false },
-    { id:uid(), date:'2026-11-08', task:'Провести ТО гидравлики на погрузчике', emp:'bystrov', priority:'normal', done:false },
-    { id:uid(), date:'2026-10-25', task:'Сверить акты выполненных работ за октябрь', emp:'bragin', priority:'urgent', done:true }
+    { id:uid(), date:'2026-11-05', task:'Заказать комплект РВД и фильтрующие элементы', comment:'Срочно до пятницы', emp:'kovrizhnykh', priority:'urgent', done:false },
+    { id:uid(), date:'2026-11-08', task:'Провести ТО гидравлики на погрузчике', comment:'Проверить насос НШ-32', emp:'bystrov', priority:'normal', done:false },
+    { id:uid(), date:'2026-10-25', task:'Сверить акты выполненных работ за октябрь', comment:'Все акты подписаны', emp:'bragin', priority:'urgent', done:true }
   ];
+}
+
+/* =========================================================
+   МГНОВЕННЫЙ СТАРТ ИЗ ПАМЯТИ (0 мс)
+   ========================================================= */
+function loadCachedData(){
+  try {
+    const raw = localStorage.getItem('gidravlika_cache');
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(parsed && parsed.orders && parsed.orders.length){
+        orders = parsed.orders;
+        plans = parsed.plans || [];
+        seq = parsed.seq || orders.length;
+        renderAll();
+        return true;
+      }
+    }
+  } catch(e){}
+  seed();
+  renderAll();
+  return false;
 }
 
 /* =========================================================
@@ -553,7 +579,6 @@ function triggerSync(){
   const ind = document.getElementById('saveIndicator');
   if(ind){ ind.className = 'save-indicator saving'; ind.textContent = '⏳ Синхронизация...'; }
 
-  // Локальный кэш
   try { localStorage.setItem('gidravlika_cache', JSON.stringify({ orders, plans, seq })); } catch(e){}
 
   clearTimeout(saveTimer);
@@ -568,17 +593,29 @@ function triggerSync(){
       if(ind){ ind.className = 'save-indicator cloud'; ind.textContent = '🟢 Облако онлайн ' + new Date().toLocaleTimeString('ru-RU'); }
     }).catch(err => {
       console.error("Save error:", err);
-      if(ind){ ind.className = 'save-indicator error'; ind.textContent = '⚠️ Ошибка доступа в БД'; }
+      if(ind){ ind.className = 'save-indicator error'; ind.textContent = '⚠️ Локально (нет связи с БД)'; }
     });
-  }, 400);
+  }, 350);
 }
 
 function startCloudListener(){
   const ind = document.getElementById('saveIndicator');
   if(!dbRef){
-    fallbackLocal();
+    if(ind){ ind.className = 'save-indicator error'; ind.textContent = '⚠️ Офлайн режим'; }
     return;
   }
+
+  firebase.database().ref('.info/connected').on('value', snap => {
+    isConnected = !!snap.val();
+    if(isConnected){
+      if(ind){ ind.className = 'save-indicator cloud'; ind.textContent = '🟢 Облако онлайн'; }
+    } else {
+      if(ind && ind.className.indexOf('cloud') === -1){
+        ind.className = 'save-indicator saving';
+        ind.textContent = '⏳ Соединение с сервером...';
+      }
+    }
+  });
 
   dbRef.on('value', snapshot => {
     const val = snapshot.val();
@@ -586,33 +623,16 @@ function startCloudListener(){
       orders = val.orders || [];
       plans = val.plans || [];
       seq = val.seq || orders.length;
+      try { localStorage.setItem('gidravlika_cache', JSON.stringify({ orders, plans, seq })); } catch(e){}
       renderAll();
       if(ind){ ind.className = 'save-indicator cloud'; ind.textContent = '🟢 Облако онлайн ' + new Date().toLocaleTimeString('ru-RU'); }
     } else {
-      seed();
       triggerSync();
-      renderAll();
     }
   }, err => {
     console.error("Cloud error:", err);
-    if(ind){ ind.className = 'save-indicator error'; ind.textContent = '⚠️ Ошибка правил Firebase'; }
-    fallbackLocal();
+    if(ind){ ind.className = 'save-indicator error'; ind.textContent = '⚠️ Ошибка доступа в БД'; }
   });
-}
-
-function fallbackLocal(){
-  try {
-    const raw = localStorage.getItem('gidravlika_cache');
-    if(raw){
-      const parsed = JSON.parse(raw);
-      orders = parsed.orders || [];
-      plans = parsed.plans || [];
-      seq = parsed.seq || orders.length;
-    } else {
-      seed();
-    }
-  } catch(e){ seed(); }
-  renderAll();
 }
 
 function statusBtn(o, field){
@@ -668,7 +688,8 @@ function renderPlans(){
     html += `<tr class="${p.priority==='urgent'?'plan-row-urgent ':''}${p.done?'plan-row-done':''}">
       <td style="text-align:center">${i+1}</td>
       <td><input type="date" data-plan-id="${p.id}" data-plan-field="date" value="${esc(p.date)}"></td>
-      <td><input type="text" data-plan-id="${p.id}" data-plan-field="task" value="${esc(p.task)}"></td>
+      <td><input type="text" placeholder="Задача / план…" data-plan-id="${p.id}" data-plan-field="task" value="${esc(p.task)}"></td>
+      <td><input type="text" placeholder="Комментарий…" data-plan-id="${p.id}" data-plan-field="comment" value="${esc(p.comment||'')}"></td>
       <td><select data-plan-id="${p.id}" data-plan-field="emp"><option value="">(Не назначен)</option>${EMPLOYEES.map(e=>`<option value="${e[0]}" ${p.emp===e[0]?'selected':''}>${e[1]}</option>`).join('')}</select></td>
       <td><button class="pill ${p.priority==='urgent'?'urgent':'normal'}" data-act="togglePriority" data-plan-id="${p.id}">${p.priority==='urgent'?'🔥 Важное':'⚪ Обычное'}</button></td>
       <td><button class="pill ${p.done?'done':'todo'}" data-act="toggleDone" data-plan-id="${p.id}">${p.done?'✓ Выполнено':'⏳ В работе'}</button></td>
@@ -706,7 +727,6 @@ function renderSummary(){
     return `<tr><td>${e[1]}</td><td>${fmtNum(tot[e[0]])}</td><td>${share}%</td></tr>`;
   }).join('');
 
-  // Группировка по месяцам
   const monthsData = {};
   orders.forEach(o => {
     const k = monthKey(o.date);
@@ -763,7 +783,7 @@ document.getElementById('tbody').addEventListener('input', e => {
 document.getElementById('tbody').addEventListener('change', e => {
   const el = e.target, id = el.dataset.id;
   const o = orders.find(x => x.id === id);
-  if(o && el.dataset.field === 'date'){ o.date = el.value; triggerSync(); renderOrders(); renderSummary(); }
+  if(o && el.dataset.field === 'date'){ o.date = el.value; triggerSync(); renderOrders(); }
 });
 
 document.getElementById('tbody').addEventListener('click', e => {
@@ -771,16 +791,18 @@ document.getElementById('tbody').addEventListener('click', e => {
   if(!btn) return;
   const act = btn.dataset.act, id = btn.dataset.id;
   const o = orders.find(x => x.id === id);
-  if(act === 'status'){ o[btn.dataset.field] = o[btn.dataset.field]==='yes'?'no':'yes'; triggerSync(); renderOrders(); renderSummary(); }
+  if(act === 'status'){ o[btn.dataset.field] = o[btn.dataset.field]==='yes'?'no':'yes'; triggerSync(); renderOrders(); }
   else if(act === 'photo'){ photoTargetId = id; document.getElementById('fileInput').click(); }
   else if(act === 'view'){ openLightbox(id); }
-  else if(act === 'del'){ orders = orders.filter(x => x.id !== id); triggerSync(); renderOrders(); renderSummary(); }
+  else if(act === 'del'){ orders = orders.filter(x => x.id !== id); triggerSync(); renderOrders(); }
 });
 
 document.getElementById('tbodyPlans').addEventListener('input', e => {
   const el = e.target, id = el.dataset.planId;
   const p = plans.find(x => x.id === id);
-  if(p && el.dataset.planField === 'task'){ p.task = el.value; triggerSync(); }
+  if(!p) return;
+  if(el.dataset.planField === 'task'){ p.task = el.value; triggerSync(); }
+  else if(el.dataset.planField === 'comment'){ p.comment = el.value; triggerSync(); }
 });
 
 document.getElementById('tbodyPlans').addEventListener('change', e => {
@@ -799,8 +821,8 @@ document.getElementById('tbodyPlans').addEventListener('click', e => {
   const act = btn.dataset.act, id = btn.dataset.planId;
   const p = plans.find(x => x.id === id);
   if(act === 'togglePriority'){ p.priority = p.priority==='urgent'?'normal':'urgent'; triggerSync(); renderPlans(); }
-  else if(act === 'toggleDone'){ p.done = !p.done; triggerSync(); renderPlans(); renderSummary(); }
-  else if(act === 'delPlan'){ plans = plans.filter(x => x.id !== id); triggerSync(); renderPlans(); renderSummary(); }
+  else if(act === 'toggleDone'){ p.done = !p.done; triggerSync(); renderPlans(); }
+  else if(act === 'delPlan'){ plans = plans.filter(x => x.id !== id); triggerSync(); renderPlans(); }
 });
 
 /* Кнопки тулбара */
@@ -810,14 +832,14 @@ document.getElementById('btnAdd').addEventListener('click', () => {
   window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'});
 });
 document.getElementById('btnClear').addEventListener('click', () => {
-  if(confirm('Удалить все заказы?')){ orders=[]; triggerSync(); renderOrders(); renderSummary(); }
+  if(confirm('Удалить все заказы?')){ orders=[]; triggerSync(); renderOrders(); }
 });
 document.getElementById('btnAddPlan').addEventListener('click', () => {
-  plans.push({ id:uid(), date:todayISO(), task:'', emp:'', priority:'normal', done:false });
-  triggerSync(); renderPlans(); renderSummary();
+  plans.push({ id:uid(), date:todayISO(), task:'', comment:'', emp:'', priority:'normal', done:false });
+  triggerSync(); renderPlans();
 });
 document.getElementById('btnClearPlans').addEventListener('click', () => {
-  if(confirm('Удалить все планы?')){ plans=[]; triggerSync(); renderPlans(); renderSummary(); }
+  if(confirm('Удалить все планы?')){ plans=[]; triggerSync(); renderPlans(); }
 });
 
 /* Сортировка по дате */
@@ -933,7 +955,7 @@ document.getElementById('btnHtml').addEventListener('click', () => {
   let planTrs = '';
   plans.forEach((p, idx) => {
     const empName = (EMPLOYEES.find(e => e[0]===p.emp)||['','—'])[1];
-    planTrs += `<tr><td>${idx+1}</td><td>${fmtDate(p.date)}</td><td>${esc(p.task)}</td><td>${empName}</td><td>${p.priority==='urgent'?'Важное':'Обычное'}</td><td>${p.done?'Выполнено':'В работе'}</td></tr>`;
+    planTrs += `<tr><td>${idx+1}</td><td>${fmtDate(p.date)}</td><td>${esc(p.task)}</td><td>${esc(p.comment||'—')}</td><td>${empName}</td><td>${p.priority==='urgent'?'Важное':'Обычное'}</td><td>${p.done?'Выполнено':'В работе'}</td></tr>`;
   });
 
   const doc = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Отчет — Гидравлика Сервис</title>
@@ -950,7 +972,7 @@ document.getElementById('btnHtml').addEventListener('click', () => {
   <h2>Заказы</h2>
   <table><thead><tr><th>Дата</th><th>№ заказа</th><th>Клиент</th>${EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('')}<th>Оплачено</th><th>Начислено</th><th>Фото</th></tr></thead><tbody>${trs}</tbody></table>
   <h2>Планы и задачи</h2>
-  <table><thead><tr><th>№</th><th>Дата</th><th>Задача</th><th>Ответственный</th><th>Приоритет</th><th>Статус</th></tr></thead><tbody>${planTrs||'<tr><td colspan="6">Нет планов</td></tr>'}</tbody></table>
+  <table><thead><tr><th>№</th><th>Дата</th><th>Задача</th><th>Комментарий</th><th>Ответственный</th><th>Приоритет</th><th>Статус</th></tr></thead><tbody>${planTrs||'<tr><td colspan="7">Нет планов</td></tr>'}</tbody></table>
   <h2>Фото актов</h2>${photos||'<p style="text-align:center;color:#8b949e">Фото не приложены.</p>'}
   </body></html>`;
   
@@ -981,11 +1003,11 @@ document.getElementById('btnExcel').addEventListener('click', () => {
       const wsOrders = XLSX.utils.aoa_to_sheet(ordersData);
       XLSX.utils.book_append_sheet(wb, wsOrders, 'Заказы');
 
-      const plansData = [['№', 'Дата/Срок', 'Задача', 'Ответственный', 'Приоритет', 'Статус']];
+      const plansData = [['№', 'Дата/Срок', 'Задача', 'Комментарий', 'Ответственный', 'Приоритет', 'Статус']];
       plans.forEach((p, i) => {
         const empItem = EMPLOYEES.find(e => e[0]===p.emp);
         const empName = empItem ? empItem[1] : '';
-        plansData.push([i+1, fmtDate(p.date), p.task, empName, p.priority==='urgent'?'Важное':'Обычное', p.done?'Выполнено':'В работе']);
+        plansData.push([i+1, fmtDate(p.date), p.task, p.comment||'', empName, p.priority==='urgent'?'Важное':'Обычное', p.done?'Выполнено':'В работе']);
       });
       const wsPlans = XLSX.utils.aoa_to_sheet(plansData);
       XLSX.utils.book_append_sheet(wb, wsPlans, 'Планы');
@@ -1011,15 +1033,15 @@ document.getElementById('btnExcel').addEventListener('click', () => {
         EMPLOYEES.map(e => '<td>' + (o.hours[e[0]]||0) + '</td>').join('') +
         '<td>' + st(o.paid) + '</td><td>' + st(o.accrued) + '</td></tr>';
     });
-    tableHtml += '</tbody></table><br><h2>Планы</h2><table border="1"><thead><tr style="background:#ddd;"><th>№</th><th>Дата</th><th>Задача</th><th>Ответственный</th><th>Приоритет</th><th>Статус</th></tr></thead><tbody>';
+    tableHtml += '</tbody></table><br><h2>Планы</h2><table border="1"><thead><tr style="background:#ddd;"><th>№</th><th>Дата</th><th>Задача</th><th>Комментарий</th><th>Ответственный</th><th>Приоритет</th><th>Статус</th></tr></thead><tbody>';
     plans.forEach((p, i) => {
       const empItem = EMPLOYEES.find(e => e[0]===p.emp);
       const empName = empItem ? empItem[1] : '';
-      tableHtml += '<tr><td>' + (i+1) + '</td><td>' + fmtDate(p.date) + '</td><td>' + esc(p.task) + '</td><td>' + empName + '</td><td>' + (p.priority==='urgent'?'Важное':'Обычное') + '</td><td>' + (p.done?'Выполнено':'В работе') + '</td></tr>';
+      tableHtml += '<tr><td>' + (i+1) + '</td><td>' + fmtDate(p.date) + '</td><td>' + esc(p.task) + '</td><td>' + esc(p.comment||'') + '</td><td>' + empName + '</td><td>' + (p.priority==='urgent'?'Важное':'Обычное') + '</td><td>' + (p.done?'Выполнено':'В работе') + '</td></tr>';
     });
     tableHtml += '</tbody></table></body></html>';
 
-    const blob = new Blob(['\ufeff' + tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const blob = new Blob(['\\ufeff' + tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'Отчет_Гидравлика_Сервис.xls';
@@ -1063,8 +1085,13 @@ if(installBtn){
 modalClose.addEventListener('click', () => { modalInstall.classList.remove('open'); });
 modalInstall.addEventListener('click', e => { if(e.target === modalInstall) modalInstall.classList.remove('open'); });
 
-/* Запуск */
+/* =========================================================
+   ИНИЦИАЛИЗАЦИЯ:
+   1. Мгновенно отрисовываем интерфейс из локальной памяти (0 мс)
+   2. В фоне связываемся с базой Firebase
+   ========================================================= */
 document.getElementById('empHead').innerHTML = EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('');
+loadCachedData();
 startCloudListener();
 </script>
 </body>
