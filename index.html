@@ -128,7 +128,6 @@
   th.sortable:hover { color: var(--blue); background: var(--panel2); }
   tbody td { border: 1px solid var(--border); padding: 6px; background: var(--bg); font-size: 14px; vertical-align: middle; }
   
-  /* Разделитель по месяцам */
   tr.month td {
     background: var(--panel); color: var(--blue); font-weight: 600; font-size: 14.5px;
     padding: 10px 14px; cursor: pointer; user-select: none; border-top: 2px solid var(--border);
@@ -139,7 +138,6 @@
     float: right; font-size: 12px; color: var(--muted); font-weight: normal; margin-left: 10px;
   }
 
-  /* Инпуты таблицы */
   input[type="date"], input[type="text"], input[type="number"], select {
     width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
     color: var(--text); padding: 8px 10px; font-size: 14px; outline: none; min-height: 38px;
@@ -237,6 +235,102 @@
     margin-bottom: 6px; align-items: center; justify-content: flex-end; gap: 4px;
   }
 
+  /* Интерактивный календарь в планах */
+  .plans-calendar-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 18px; margin-bottom: 18px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  }
+  .cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
+  }
+  .cal-title-wrap {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .cal-title {
+    font-size: 16px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; min-width: 160px;
+  }
+  .cal-nav-btn {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 5px 12px; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .cal-nav-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .cal-legend {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted);
+  }
+  .cal-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+  .cal-legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .dot-urgent { background: var(--orange); box-shadow: 0 0 6px rgba(240,136,62,0.6); }
+  .dot-active { background: var(--blue); box-shadow: 0 0 6px rgba(88,166,255,0.6); }
+  .dot-done   { background: #3fb950; }
+
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+  }
+  .cal-weekday {
+    text-align: center; font-size: 11.5px; font-weight: 700; color: var(--muted);
+    padding: 6px 0; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .cal-weekday.weekend { color: #f85149; }
+  
+  .cal-day {
+    position: relative; min-height: 52px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg); padding: 5px 6px; cursor: pointer; transition: all 0.2s ease;
+    display: flex; flex-direction: column; justify-content: space-between; user-select: none;
+  }
+  .cal-day:hover:not(.empty) {
+    border-color: var(--blue); background: var(--panel2); transform: translateY(-1px);
+  }
+  .cal-day.empty {
+    border-color: transparent; background: transparent; cursor: default;
+  }
+  .cal-day.today {
+    border-color: #388bfd; box-shadow: 0 0 0 1px #388bfd inset;
+  }
+  .cal-day.selected {
+    border-color: var(--orange) !important; background: rgba(240,136,62,0.14) !important;
+    box-shadow: 0 0 0 2px var(--orange) inset;
+  }
+  .cal-day-num {
+    font-size: 13px; font-weight: 600; color: var(--text); line-height: 1;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .cal-day.today .cal-day-num { color: var(--blue); font-weight: 800; }
+  .cal-day.weekend .cal-day-num { color: #ff7b72; }
+
+  /* Подсветка дней с планами */
+  .cal-day.has-plans {
+    border-color: rgba(88,166,255,0.45); background: rgba(56,139,253,0.06);
+  }
+  .cal-day.has-urgent {
+    border-color: rgba(240,136,62,0.6); background: rgba(240,136,62,0.1);
+  }
+  .cal-day.all-done {
+    border-color: rgba(46,160,67,0.45); background: rgba(46,160,67,0.06);
+  }
+
+  .cal-badge-pill {
+    font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; line-height: 1.2;
+    display: inline-block; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; margin-top: 4px;
+  }
+  .cal-badge-pill.urgent { background: rgba(240,136,62,0.25); color: var(--orange); border: 1px solid rgba(240,136,62,0.4); }
+  .cal-badge-pill.active { background: rgba(88,166,255,0.22); color: var(--blue); border: 1px solid rgba(88,166,255,0.35); }
+  .cal-badge-pill.done   { background: rgba(46,160,67,0.2); color: #3fb950; border: 1px solid rgba(46,160,67,0.35); }
+
+  /* Полоса активного фильтра */
+  .cal-filter-banner {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    background: rgba(240,136,62,0.12); border: 1px solid var(--orange); border-radius: 6px;
+    padding: 8px 12px; margin-top: 12px; font-size: 13px; color: var(--text);
+  }
+  .cal-filter-banner strong { color: var(--orange); }
+  .cal-filter-reset {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 4px;
+    color: var(--text); padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .cal-filter-reset:hover { border-color: var(--red); color: var(--red); }
+
   /* Lightbox */
   .lightbox {
     position: fixed; inset: 0; background: rgba(1,4,9,.94);
@@ -277,35 +371,7 @@
     padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; min-height: 44px;
   }
 
-  @media (max-width: 768px) {
-    input[type="date"], input[type="text"], input[type="number"], select {
-      font-size: 16px !important;
-    }
-    .page { padding: 0 8px; }
-    .navbar { padding: 8px 10px; }
-    .brand { font-size: 13px; }
-    .btn-install { width: 100%; order: 3; margin-top: 6px; justify-content: center; }
-    .searchbar { flex-direction: column; align-items: stretch; padding: 8px 10px; }
-    .searchbox { width: 100%; min-width: 100%; }
-    .btn-reset { width: 100%; text-align: center; }
-    .scroll-hint { display: flex; }
-    .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .toolbar .btn { width: 100%; padding: 10px 6px; font-size: 13px; text-align: center; }
-    .toolbar span[style*="flex:1"] { display: none; }
-    .cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .card { padding: 10px 12px; }
-    .card .num-big { font-size: 22px; }
-    .card .lbl2 { font-size: 11.5px; }
-    .lb-body img { max-width: 86vw; max-height: 65vh; }
-    .lb-nav { width: 38px; height: 38px; font-size: 20px; }
-  }
-
-  @media (max-width: 480px) {
-    .brand .who { display: inline-block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
-    .toolbar { grid-template-columns: 1fr; }
-  }
-
-  /* Экран блокировки (Ввод пароля) */
+  /* Экран блокировки (Ввод пароля 1787) */
   .auth-overlay {
     position: fixed; inset: 0; background: #010409;
     display: flex; align-items: center; justify-content: center;
@@ -349,9 +415,41 @@
     display: inline-flex; align-items: center; gap: 4px;
   }
   .btn-lock:hover { color: var(--text); border-color: var(--muted); }
+
+  @media (max-width: 768px) {
+    input[type="date"], input[type="text"], input[type="number"], select { font-size: 16px !important; }
+    .page { padding: 0 8px; }
+    .navbar { padding: 8px 10px; }
+    .brand { font-size: 13px; }
+    .btn-install { width: 100%; order: 3; margin-top: 6px; justify-content: center; }
+    .searchbar { flex-direction: column; align-items: stretch; padding: 8px 10px; }
+    .searchbox { width: 100%; min-width: 100%; }
+    .btn-reset { width: 100%; text-align: center; }
+    .scroll-hint { display: flex; }
+    .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .toolbar .btn { width: 100%; padding: 10px 6px; font-size: 13px; text-align: center; }
+    .toolbar span[style*="flex:1"] { display: none; }
+    .cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .card { padding: 10px 12px; }
+    .card .num-big { font-size: 22px; }
+    .card .lbl2 { font-size: 11.5px; }
+    .lb-body img { max-width: 86vw; max-height: 65vh; }
+    .lb-nav { width: 38px; height: 38px; font-size: 20px; }
+    .plans-calendar-card { padding: 12px 10px; }
+    .cal-day { min-height: 44px; padding: 4px; }
+    .cal-day-num { font-size: 12px; }
+    .cal-badge-pill { font-size: 9px; padding: 1px 3px; }
+    .cal-legend { font-size: 11px; gap: 8px; }
+  }
+
+  @media (max-width: 480px) {
+    .brand .who { display: inline-block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+    .toolbar { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
+
 <!-- Экран авторизации (Пароль 1787) -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card" id="authCard">
@@ -366,7 +464,6 @@
   </div>
 </div>
 
-
 <header class="navbar">
   <div class="nav-left">
     <svg class="burger" height="20" width="20" viewBox="0 0 16 16"><path d="M1 2.75A.75.75 0 0 1 1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75Zm0 5A.75.75 0 0 1 1.75 7h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 7.75ZM1.75 12h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5Z"/></svg>
@@ -376,7 +473,7 @@
 
   <div class="nav-right">
     <span class="save-indicator saving" id="saveIndicator">⏳ Синхронизация...</span>
-  <button class="btn-lock" id="btnLock" title="Заблокировать доступ">🔒 Выйти</button>
+    <button class="btn-lock" id="btnLock" title="Заблокировать доступ">🔒 Выйти</button>
   </div>
 
   <button class="btn-install" id="btnInstall">📲 Установить на экран</button>
@@ -442,6 +539,33 @@
 
   <!-- Вкладка: Планы -->
   <div id="view-plans" class="hidden">
+    <!-- Интерактивный календарь планов -->
+    <div class="plans-calendar-card">
+      <div class="cal-header">
+        <div class="cal-title-wrap">
+          <button class="cal-nav-btn" id="calPrevMonth" title="Предыдущий месяц">‹</button>
+          <div class="cal-title" id="calTitle">📅 Месяц Год</div>
+          <button class="cal-nav-btn" id="calNextMonth" title="Следующий месяц">›</button>
+          <button class="cal-nav-btn" id="calTodayBtn" style="font-size:12px;padding:5px 8px;">Сегодня</button>
+        </div>
+
+        <div class="cal-legend">
+          <span class="cal-legend-item"><span class="cal-legend-dot dot-urgent"></span> Срочный</span>
+          <span class="cal-legend-item"><span class="cal-legend-dot dot-active"></span> В работе</span>
+          <span class="cal-legend-item"><span class="cal-legend-dot dot-done"></span> Выполнено</span>
+        </div>
+      </div>
+
+      <!-- Сетка дней календаря -->
+      <div class="cal-grid" id="calGrid"></div>
+
+      <!-- Информационная плашка активного фильтра по выбранной дате -->
+      <div class="cal-filter-banner" id="calFilterBanner" style="display:none;">
+        <div>Показаны задачи на дату: <strong id="calSelectedDateText"></strong></div>
+        <button class="cal-filter-reset" id="calResetFilter">✕ Показать все планы</button>
+      </div>
+    </div>
+
     <div class="scroll-hint"><span>↔ Листайте таблицу вправо</span></div>
     <div class="table-wrap">
       <table>
@@ -576,6 +700,11 @@ let dateSortOrder = 'asc';
 let monthSortOrder = 'desc';
 const search = { num:'', client:'' };
 
+// Состояние календаря планов
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-indexed
+let calSelectedDate = null; // 'YYYY-MM-DD' или null
+
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function emptyHours(){ const h={}; EMPLOYEES.forEach(e => { h[e[0]]=0; }); return h; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -694,11 +823,12 @@ function startCloudListener(){
       seq = val.seq || orders.length;
       try { localStorage.setItem('gidravlika_cache', JSON.stringify({ orders, plans, collapsed, seq })); } catch(e){}
 
-      // Если пользователь печатает текст прямо сейчас, не перерисовываем DOM таблицы чтобы не сбить фокус
       const activeEl = document.activeElement;
       const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
       if (!isTyping) {
         renderAll();
+      } else {
+        renderCalendar();
       }
       if(ind){ ind.className = 'save-indicator cloud'; ind.textContent = '🟢 Облако онлайн ' + new Date().toLocaleTimeString('ru-RU'); }
     } else {
@@ -718,10 +848,9 @@ function statusBtn(o, field){
 }
 
 /* =========================================================
-   ТАБЛИЦА ЗАКАЗОВ: РАЗБИВКА ПО МЕСЯЦАМ И СОРТИРОВКА ПО ПОРЯДКУ
+   ТАБЛИЦА ЗАКАЗОВ: РАЗБИВКА ПО МЕСЯЦАМ И СОРТИРОВКА
    ========================================================= */
 function renderOrders(){
-  // 1. Сортировка всех заказов по дате (по порядку: asc / desc)
   const sorted = orders.slice().sort((a,b) => {
     const da = a.date || '', db = b.date || '';
     if(da !== db) {
@@ -732,7 +861,6 @@ function renderOrders(){
 
   viewPhotos = sorted.filter(o => !!o.photo);
 
-  // 2. Группировка заказов по месяцам (сохраняя выбранный порядок)
   const groupOrder = [];
   const groups = {};
   sorted.forEach(o => {
@@ -744,14 +872,12 @@ function renderOrders(){
     groups[k].push(o);
   });
 
-  // 3. Формирование HTML с разделителями месяцев
   let html = '';
   for(let i=0; i<groupOrder.length; i++){
     const k = groupOrder[i];
     const isCol = !!collapsed[k];
     const monthOrders = groups[k];
     
-    // Подсчет часов за этот месяц
     let monthHours = 0;
     monthOrders.forEach(o => {
       EMPLOYEES.forEach(e => { monthHours += (parseFloat(o.hours[e[0]])||0); });
@@ -765,7 +891,7 @@ function renderOrders(){
       </td>
     </tr>`;
 
-    if(isCol) continue; // Месяц свернут
+    if(isCol) continue;
 
     for(let j=0; j<monthOrders.length; j++){
       const o = monthOrders[j];
@@ -810,11 +936,129 @@ function updateTotals(sortedList){
   document.getElementById('tot-sum').textContent = 'Всего: ' + fmtNum(sum) + ' ч.';
 }
 
-function renderPlans(){
+/* =========================================================
+   ИНТЕРАКТИВНЫЙ КАЛЕНДАРЬ ПЛАНОВ С ПОДСВЕТКОЙ ДАТ
+   ========================================================= */
+const MONTH_NAMES_RU = [
+  'Январь','Февраль','Март','Апрель','Май','Июнь',
+  'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'
+];
+const WEEKDAYS_RU = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
+function renderCalendar(){
+  const titleEl = document.getElementById('calTitle');
+  const gridEl = document.getElementById('calGrid');
+  if(!titleEl || !gridEl) return;
+
+  titleEl.textContent = `📅 ${MONTH_NAMES_RU[calMonth]} ${calYear}`;
+
+  // Группируем планы по дате YYYY-MM-DD
+  const plansByDate = {};
+  plans.forEach(p => {
+    if(!p.date) return;
+    if(!plansByDate[p.date]) plansByDate[p.date] = [];
+    plansByDate[p.date].push(p);
+  });
+
+  const todayStr = todayISO();
   let html = '';
-  plans.forEach((p, i) => {
+
+  // Заголовки дней недели
+  WEEKDAYS_RU.forEach((w, idx) => {
+    const isWk = (idx >= 5);
+    html += `<div class="cal-weekday ${isWk?'weekend':''}">${w}</div>`;
+  });
+
+  // Расчет первого дня месяца (0 = Вс, превращаем в Пн=0..Вс=6)
+  const firstDayObj = new Date(calYear, calMonth, 1);
+  let firstDayIndex = firstDayObj.getDay() - 1;
+  if(firstDayIndex === -1) firstDayIndex = 6;
+
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  // Пустые ячейки до 1-го числа
+  for(let i=0; i<firstDayIndex; i++){
+    html += '<div class="cal-day empty"></div>';
+  }
+
+  // Дни месяца
+  for(let d=1; d<=daysInMonth; d++){
+    const dayStr = String(d).padStart(2, '0');
+    const monthStr = String(calMonth + 1).padStart(2, '0');
+    const dateISO = `${calYear}-${monthStr}-${dayStr}`;
+
+    const dayOfWeek = (firstDayIndex + d - 1) % 7;
+    const isWeekend = (dayOfWeek === 5 || dayOfWeek === 6);
+    const isToday = (dateISO === todayStr);
+    const isSelected = (dateISO === calSelectedDate);
+
+    const dayPlans = plansByDate[dateISO] || [];
+    const count = dayPlans.length;
+
+    let dayClass = 'cal-day';
+    if(isWeekend) dayClass += ' weekend';
+    if(isToday) dayClass += ' today';
+    if(isSelected) dayClass += ' selected';
+
+    let badgeHtml = '';
+    if(count > 0){
+      const hasUrgent = dayPlans.some(p => p.priority === 'urgent' && !p.done);
+      const hasActive = dayPlans.some(p => !p.done);
+      const allDone = dayPlans.every(p => p.done);
+
+      if(hasUrgent){
+        dayClass += ' has-urgent';
+        badgeHtml = `<span class="cal-badge-pill urgent" title="Есть срочные задачи">🔥 ${count}</span>`;
+      } else if(hasActive){
+        dayClass += ' has-plans';
+        badgeHtml = `<span class="cal-badge-pill active" title="Задач в работе">${count} пл.</span>`;
+      } else if(allDone){
+        dayClass += ' all-done';
+        badgeHtml = `<span class="cal-badge-pill done" title="Все задачи выполнены">✓ ${count}</span>`;
+      }
+    }
+
+    html += `<div class="${dayClass}" data-cal-date="${dateISO}" title="${count>0 ? `Планов на дату: ${count}` : 'Нажмите для фильтрации / добавления'}">
+      <div class="cal-day-num">
+        <span>${d}</span>
+      </div>
+      <div class="cal-dots-row">
+        ${badgeHtml}
+      </div>
+    </div>`;
+  }
+
+  gridEl.innerHTML = html;
+
+  // Плашка выбранного фильтра
+  const filterBanner = document.getElementById('calFilterBanner');
+  const selDateText = document.getElementById('calSelectedDateText');
+  if(calSelectedDate){
+    filterBanner.style.display = 'flex';
+    selDateText.textContent = fmtDate(calSelectedDate);
+  } else {
+    filterBanner.style.display = 'none';
+  }
+}
+
+/* =========================================================
+   ТАБЛИЦА ПЛАНОВ (УЧИТЫВАЕТ ВЫБРАННУЮ В КАЛЕНДАРЕ ДАТУ)
+   ========================================================= */
+function renderPlans(){
+  renderCalendar();
+
+  // Если в календаре выбрана дата, фильтруем таблицу по ней
+  let displayPlans = plans.map((p, originalIndex) => ({ p, originalIndex }));
+  if(calSelectedDate){
+    displayPlans = displayPlans.filter(item => item.p.date === calSelectedDate);
+  }
+
+  let html = '';
+  displayPlans.forEach(item => {
+    const p = item.p;
+    const index = item.originalIndex;
     html += `<tr class="${p.priority==='urgent'?'plan-row-urgent ':''}${p.done?'plan-row-done':''}">
-      <td style="text-align:center">${i+1}</td>
+      <td style="text-align:center">${index+1}</td>
       <td><input type="date" data-plan-id="${p.id}" data-plan-field="date" value="${esc(p.date)}"></td>
       <td><input type="text" placeholder="Задача / план…" data-plan-id="${p.id}" data-plan-field="task" value="${esc(p.task)}"></td>
       <td><input type="text" placeholder="Комментарий / примечание…" data-plan-id="${p.id}" data-plan-field="comment" value="${esc(p.comment||'')}"></td>
@@ -824,7 +1068,12 @@ function renderPlans(){
       <td style="text-align:center"><button class="act-btn" data-act="delPlan" data-plan-id="${p.id}">🗑</button></td>
     </tr>`;
   });
-  document.getElementById('tbodyPlans').innerHTML = html || '<tr><td colspan="8" style="text-align:center;padding:24px;">Нет планов</td></tr>';
+
+  const emptyText = calSelectedDate
+    ? `Нет задач на дату ${fmtDate(calSelectedDate)}. Нажмите «+ Добавить план» для создания задачи на этот день.`
+    : 'Нет планов. Нажмите «+ Добавить план» для создания.';
+
+  document.getElementById('tbodyPlans').innerHTML = html || `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">${emptyText}</td></tr>`;
   document.getElementById('plansBadge').textContent = plans.filter(p=>!p.done).length;
 }
 
@@ -855,7 +1104,6 @@ function renderSummary(){
     return `<tr><td>${e[1]}</td><td>${fmtNum(tot[e[0]])}</td><td>${share}%</td></tr>`;
   }).join('');
 
-  // Группировка по месяцам в итогах
   const monthsData = {};
   orders.forEach(o => {
     const k = monthKey(o.date);
@@ -899,11 +1147,10 @@ function renderAll(){
 }
 
 /* =========================================================
-   ОБРАБОТЧИКИ СОБЫТИЙ ТАБЛИЦЫ
+   ОБРАБОТЧИКИ СОБЫТИЙ ТАБЛИЦЫ ЗАКАЗОВ
    ========================================================= */
 const tbody = document.getElementById('tbody');
 
-// При наборе текста обновляем только данные в памяти, не трогая DOM
 tbody.addEventListener('input', e => {
   const el = e.target, id = el.dataset.id;
   const o = orders.find(x => x.id === id);
@@ -918,7 +1165,6 @@ tbody.addEventListener('input', e => {
   triggerSync();
 });
 
-// При изменении даты пересортировываем таблицу по порядку
 tbody.addEventListener('change', e => {
   const el = e.target, id = el.dataset.id;
   const o = orders.find(x => x.id === id);
@@ -935,7 +1181,6 @@ tbody.addEventListener('click', e => {
   if(!el) return;
   const act = el.dataset.act, id = el.dataset.id;
 
-  // Сворачивание / разворачивание месяца
   if(act === 'toggle'){
     const m = el.dataset.month;
     collapsed[m] = !collapsed[m];
@@ -975,7 +1220,6 @@ tbody.addEventListener('click', e => {
   }
 });
 
-/* Переключение сортировки по клику на столбец «Дата» */
 document.getElementById('thSortDate').addEventListener('click', () => {
   dateSortOrder = dateSortOrder === 'asc' ? 'desc' : 'asc';
   renderOrders();
@@ -986,7 +1230,51 @@ document.getElementById('btnToggleMonthSort').addEventListener('click', () => {
   renderSummary();
 });
 
-/* Слушатели планов */
+/* =========================================================
+   ОБРАБОТЧИКИ СОБЫТИЙ КАЛЕНДАРЯ
+   ========================================================= */
+document.getElementById('calPrevMonth').addEventListener('click', () => {
+  calMonth--;
+  if(calMonth < 0){ calMonth = 11; calYear--; }
+  renderCalendar();
+});
+
+document.getElementById('calNextMonth').addEventListener('click', () => {
+  calMonth++;
+  if(calMonth > 11){ calMonth = 0; calYear++; }
+  renderCalendar();
+});
+
+document.getElementById('calTodayBtn').addEventListener('click', () => {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  calSelectedDate = todayISO();
+  renderPlans();
+});
+
+document.getElementById('calGrid').addEventListener('click', e => {
+  const dayEl = e.target.closest('[data-cal-date]');
+  if(!dayEl || dayEl.classList.contains('empty')) return;
+  const clickedDate = dayEl.dataset.calDate;
+  
+  // Повторный клик снимает фильтр
+  if(calSelectedDate === clickedDate){
+    calSelectedDate = null;
+  } else {
+    calSelectedDate = clickedDate;
+  }
+  renderPlans();
+});
+
+document.getElementById('calResetFilter').addEventListener('click', () => {
+  calSelectedDate = null;
+  renderPlans();
+});
+
+/* =========================================================
+   ОБРАБОТЧИКИ СОБЫТИЙ ТАБЛИЦЫ ПЛАНОВ
+   ========================================================= */
 const tbodyPlans = document.getElementById('tbodyPlans');
 tbodyPlans.addEventListener('input', e => {
   const el = e.target, id = el.dataset.planId;
@@ -1001,7 +1289,10 @@ tbodyPlans.addEventListener('change', e => {
   const el = e.target, id = el.dataset.planId;
   const p = plans.find(x => x.id === id);
   if(p){
-    if(el.dataset.planField === 'date') p.date = el.value;
+    if(el.dataset.planField === 'date'){
+      p.date = el.value;
+      renderCalendar();
+    }
     else if(el.dataset.planField === 'emp') p.emp = el.value;
     triggerSync();
   }
@@ -1041,7 +1332,8 @@ document.getElementById('btnClear').addEventListener('click', () => {
 });
 
 document.getElementById('btnAddPlan').addEventListener('click', () => {
-  plans.push({ id:uid(), date:todayISO(), task:'', comment:'', emp:'', priority:'normal', done:false });
+  const targetDate = calSelectedDate || todayISO();
+  plans.push({ id:uid(), date:targetDate, task:'', comment:'', emp:'', priority:'normal', done:false });
   triggerSync();
   renderPlans();
   renderSummary();
@@ -1101,7 +1393,7 @@ document.getElementById('fileInput').addEventListener('change', e => {
   reader.readAsDataURL(file);
 });
 
-/* Просмотр фото (Lightbox) */
+/* Lightbox */
 function openLightbox(id){
   const idx = viewPhotos.findIndex(o => o.id===id);
   if(idx<0) return;
@@ -1285,16 +1577,6 @@ modalClose.addEventListener('click', () => { modalInstall.classList.remove('open
 modalInstall.addEventListener('click', e => { if(e.target === modalInstall) modalInstall.classList.remove('open'); });
 
 /* =========================================================
-   ИНИЦИАЛИЗАЦИЯ:
-   1. Отрисовка колонок сотрудников
-   2. Мгновенный показ из кэша (0 мс)
-   3. Фоновое подключение к Firebase
-   ========================================================= */
-document.getElementById('empHead').innerHTML = EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('');
-loadCachedData();
-startCloudListener();
-
-/* =========================================================
    АВТОРИЗАЦИЯ И ПАРОЛЬ ДОСТУПА (1787)
    ========================================================= */
 const APP_PASSWORD = "1787";
@@ -1332,7 +1614,7 @@ function submitAuth(){
   } else {
     err.style.display = 'block';
     card.classList.remove('shake');
-    void card.offsetWidth; // trigger reflow
+    void card.offsetWidth;
     card.classList.add('shake');
     inp.value = '';
     inp.focus();
@@ -1350,8 +1632,13 @@ document.getElementById('btnLock').addEventListener('click', () => {
   setTimeout(() => { if(inp) inp.focus(); }, 150);
 });
 
-// Проверка пароля при запуске
+/* =========================================================
+   ИНИЦИАЛИЗАЦИЯ:
+   ========================================================= */
+document.getElementById('empHead').innerHTML = EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('');
 checkAuth();
+loadCachedData();
+startCloudListener();
 </script>
 </body>
 </html>
