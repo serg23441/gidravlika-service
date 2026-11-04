@@ -1,33 +1,7 @@
-// Service Worker для PWA Гидравлика Сервис
-const CACHE_NAME = 'gidravlika-pwa-v1';
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json'
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-    })
-  );
-  self.clients.claim();
-});
-
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request).catch(() => caches.match('./index.html'));
-    })
-  );
+const CACHE_NAME = 'gidravlika-v3';
+self.addEventListener('install', e => self.skipWaiting());
+self.addEventListener('activate', e => self.clients.claim());
+self.addEventListener('fetch', e => {
+  if (e.request.url.includes('firebaseio.com') || e.request.url.includes('googleapis.com')) return;
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });

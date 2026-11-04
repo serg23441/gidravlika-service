@@ -15,7 +15,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <!-- SheetJS для выгрузки Excel (.xlsx) -->
-<script defer src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<!-- SheetJS загружается по требованию при клике на выгрузку Excel -->
 
 <style>
   :root{
@@ -128,6 +128,7 @@
   th.sortable:hover { color: var(--blue); background: var(--panel2); }
   tbody td { border: 1px solid var(--border); padding: 6px; background: var(--bg); font-size: 14px; vertical-align: middle; }
   
+  /* Разделитель по месяцам */
   tr.month td {
     background: var(--panel); color: var(--blue); font-weight: 600; font-size: 14.5px;
     padding: 10px 14px; cursor: pointer; user-select: none; border-top: 2px solid var(--border);
@@ -236,149 +237,6 @@
     margin-bottom: 6px; align-items: center; justify-content: flex-end; gap: 4px;
   }
 
-  /* ---------------------------------------------------------
-     КАЛЕНДАРЬ НА 6 МЕСЯЦЕВ В ПЛАНАХ
-     --------------------------------------------------------- */
-  .six-month-container {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-    padding: 16px 18px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  }
-  .sm-header {
-    display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 12px; margin-bottom: 16px; padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-  }
-  .sm-title-group {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  }
-  .sm-main-title {
-    font-size: 16px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px;
-  }
-  .sm-range-badge {
-    font-size: 12px; color: var(--blue); background: rgba(56,139,253,0.12);
-    border: 1px solid rgba(56,139,253,0.3); padding: 3px 8px; border-radius: 6px; font-weight: 600;
-  }
-  .sm-nav-btns {
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-  .sm-btn {
-    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
-    padding: 5px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  .sm-btn:hover { border-color: var(--blue); color: var(--blue); }
-  
-  .sm-legend {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted);
-  }
-  .sm-legend-item { display: inline-flex; align-items: center; gap: 5px; }
-  .sm-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-  .dot-urgent { background: var(--orange); box-shadow: 0 0 6px rgba(240,136,62,0.8); }
-  .dot-active { background: var(--blue); box-shadow: 0 0 6px rgba(88,166,255,0.7); }
-  .dot-done   { background: #3fb950; }
-
-  /* Сетка из 6 месяцев */
-  .six-month-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
-  }
-  @media (max-width: 1100px) {
-    .six-month-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-  @media (max-width: 640px) {
-    .six-month-grid { grid-template-columns: 1fr; gap: 12px; }
-    .six-month-container { padding: 12px 10px; }
-  }
-
-  /* Карточка месяца */
-  .sm-month-card {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
-    padding: 12px 10px; display: flex; flex-direction: column; transition: border-color 0.2s;
-  }
-  .sm-month-card:hover { border-color: rgba(88,166,255,0.4); }
-  .sm-month-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(48,54,61,0.6);
-  }
-  .sm-month-name {
-    font-size: 13.5px; font-weight: 700; color: var(--text); text-transform: capitalize;
-  }
-  .sm-month-count {
-    font-size: 11px; padding: 1px 6px; border-radius: 10px; font-weight: 700;
-  }
-  .sm-month-count.has { background: rgba(56,139,253,0.18); color: var(--blue); border: 1px solid rgba(56,139,253,0.3); }
-  .sm-month-count.none { color: var(--muted); opacity: 0.6; }
-
-  /* Дни недели и сетка чисел */
-  .sm-weekdays-row {
-    display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 4px;
-  }
-  .sm-wd {
-    text-align: center; font-size: 10.5px; font-weight: 700; color: var(--muted);
-    padding: 2px 0; text-transform: uppercase;
-  }
-  .sm-wd.wknd { color: #f85149; }
-
-  .sm-days-grid {
-    display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
-  }
-  .sm-cell {
-    aspect-ratio: 1; min-height: 28px; border-radius: 6px; border: 1px solid transparent;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-size: 11.5px; font-weight: 600; color: var(--text); cursor: pointer;
-    position: relative; user-select: none; transition: all 0.15s ease;
-  }
-  .sm-cell.empty { cursor: default; }
-  .sm-cell:hover:not(.empty) {
-    background: var(--panel2); border-color: var(--blue); transform: scale(1.08); z-index: 2;
-  }
-  .sm-cell.wknd:not(.empty) { color: #ff7b72; }
-  
-  .sm-cell.is-today {
-    border-color: #58a6ff !important; font-weight: 800; background: rgba(56,139,253,0.12);
-  }
-  .sm-cell.is-selected {
-    border-color: var(--orange) !important; background: rgba(240,136,62,0.25) !important;
-    color: #fff !important; font-weight: 800; transform: scale(1.1); z-index: 3;
-    box-shadow: 0 0 8px rgba(240,136,62,0.6);
-  }
-
-  /* Цветовая индикация дней */
-  .sm-cell.has-urgent {
-    background: rgba(240,136,62,0.18); border-color: var(--orange); color: #fff; font-weight: 700;
-  }
-  .sm-cell.has-active {
-    background: rgba(88,166,255,0.16); border-color: rgba(88,166,255,0.65); color: #fff; font-weight: 700;
-  }
-  .sm-cell.all-done {
-    background: rgba(46,160,67,0.15); border-color: rgba(46,160,67,0.55); color: #7ee787;
-  }
-
-  .sm-indicator {
-    position: absolute; bottom: 2px; width: 4px; height: 4px; border-radius: 50%;
-  }
-  .sm-cell.has-urgent .sm-indicator { background: var(--orange); }
-  .sm-cell.has-active .sm-indicator { background: var(--blue); }
-  .sm-cell.all-done .sm-indicator { background: #3fb950; }
-
-  /* Баннер выбранной даты */
-  .sm-filter-bar {
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
-    background: rgba(240,136,62,0.12); border: 1px solid var(--orange); border-radius: 8px;
-    padding: 10px 14px; margin-top: 14px; font-size: 13.5px;
-  }
-  .sm-filter-bar strong { color: var(--orange); }
-  .sm-filter-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .sm-filter-reset-btn {
-    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;
-  }
-  .sm-filter-reset-btn:hover { border-color: var(--red); color: var(--red); }
-  .sm-filter-add-btn {
-    background: var(--green); border: 1px solid var(--green2); color: #fff;
-    padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;
-  }
-  .sm-filter-add-btn:hover { filter: brightness(1.15); }
-
   /* Lightbox */
   .lightbox {
     position: fixed; inset: 0; background: rgba(1,4,9,.94);
@@ -419,7 +277,170 @@
     padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; min-height: 44px;
   }
 
-  /* Экран блокировки (Ввод пароля 1787) */
+  @media (max-width: 768px) {
+    input[type="date"], input[type="text"], input[type="number"], select {
+      font-size: 16px !important;
+    }
+    .page { padding: 0 8px; }
+    .navbar { padding: 8px 10px; }
+    .brand { font-size: 13px; }
+    .btn-install { width: 100%; order: 3; margin-top: 6px; justify-content: center; }
+    .searchbar { flex-direction: column; align-items: stretch; padding: 8px 10px; }
+    .searchbox { width: 100%; min-width: 100%; }
+    .btn-reset { width: 100%; text-align: center; }
+    .scroll-hint { display: flex; }
+    .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .toolbar .btn { width: 100%; padding: 10px 6px; font-size: 13px; text-align: center; }
+    .toolbar span[style*="flex:1"] { display: none; }
+    .cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .card { padding: 10px 12px; }
+    .card .num-big { font-size: 22px; }
+    .card .lbl2 { font-size: 11.5px; }
+    .lb-body img { max-width: 86vw; max-height: 65vh; }
+    .lb-nav { width: 38px; height: 38px; font-size: 20px; }
+  }
+
+  @media (max-width: 480px) {
+    .brand .who { display: inline-block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+    .toolbar { grid-template-columns: 1fr; }
+  }
+
+  
+  /* ---------------------------------------------------------
+     КОМПАКТНЫЙ КАЛЕНДАРЬ НА 6 МЕСЯЦЕВ (3x3 см)
+     --------------------------------------------------------- */
+  .six-month-container {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  }
+  .sm-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px; margin-bottom: 10px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sm-title-group {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .sm-main-title {
+    font-size: 14.5px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 5px;
+  }
+  .sm-range-badge {
+    font-size: 11px; color: var(--blue); background: rgba(56,139,253,0.12);
+    border: 1px solid rgba(56,139,253,0.3); padding: 2px 7px; border-radius: 5px; font-weight: 600;
+  }
+  .sm-nav-btns {
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .sm-btn {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    padding: 4px 9px; border-radius: 5px; font-size: 11.5px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .sm-btn:hover { border-color: var(--blue); color: var(--blue); }
+  
+  .sm-legend {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--muted);
+  }
+  .sm-legend-item { display: inline-flex; align-items: center; gap: 4px; }
+  .sm-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .dot-urgent { background: var(--orange); box-shadow: 0 0 5px rgba(240,136,62,0.8); }
+  .dot-active { background: var(--blue); box-shadow: 0 0 5px rgba(88,166,255,0.7); }
+  .dot-done   { background: #3fb950; }
+
+  /* Лента из 6 компактных мини-месяцев 3x3 см */
+  .six-month-grid {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start;
+  }
+
+  /* Карточка мини-месяца: размер 3см на 3см (или пропорциональный компактный вид) */
+  .sm-month-card {
+    width: 3.1cm; min-width: 116px; max-width: 130px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 5px 6px; display: flex; flex-direction: column; justify-content: space-between;
+    transition: all 0.15s ease; box-sizing: border-box; flex-shrink: 0;
+  }
+  .sm-month-card:hover { border-color: var(--blue); }
+  .sm-month-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 3px; padding-bottom: 2px; border-bottom: 1px solid rgba(48,54,61,0.5);
+  }
+  .sm-month-name {
+    font-size: 11px; font-weight: 700; color: var(--text); text-transform: capitalize;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .sm-month-count {
+    font-size: 9.5px; padding: 0 4px; border-radius: 8px; font-weight: 700; line-height: 1.3;
+  }
+  .sm-month-count.has { background: rgba(56,139,253,0.2); color: var(--blue); border: 1px solid rgba(56,139,253,0.3); }
+  .sm-month-count.none { color: var(--muted); opacity: 0.5; }
+
+  /* Дни недели */
+  .sm-weekdays-row {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; margin-bottom: 2px;
+  }
+  .sm-wd {
+    text-align: center; font-size: 8.5px; font-weight: 700; color: var(--muted);
+    line-height: 1; padding: 1px 0;
+  }
+  .sm-wd.wknd { color: #f85149; }
+
+  /* Сетка чисел */
+  .sm-days-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 1.5px;
+  }
+  .sm-cell {
+    aspect-ratio: 1; min-height: 12px; border-radius: 3px; border: 1px solid transparent;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9.5px; font-weight: 600; color: var(--text); cursor: pointer;
+    position: relative; user-select: none; transition: transform 0.1s;
+    line-height: 1;
+  }
+  .sm-cell.empty { cursor: default; }
+  .sm-cell:hover:not(.empty) {
+    background: var(--panel2); border-color: var(--blue); transform: scale(1.15); z-index: 2;
+  }
+  .sm-cell.wknd:not(.empty) { color: #ff7b72; }
+  
+  .sm-cell.is-today {
+    border-color: #58a6ff !important; font-weight: 800; background: rgba(56,139,253,0.18);
+  }
+  .sm-cell.is-selected {
+    border-color: var(--orange) !important; background: rgba(240,136,62,0.35) !important;
+    color: #fff !important; font-weight: 800; transform: scale(1.2); z-index: 3;
+    box-shadow: 0 0 5px rgba(240,136,62,0.8);
+  }
+
+  /* Подсветка планов в ячейках */
+  .sm-cell.has-urgent {
+    background: rgba(240,136,62,0.3); border-color: var(--orange); color: #fff; font-weight: 700;
+  }
+  .sm-cell.has-active {
+    background: rgba(88,166,255,0.25); border-color: rgba(88,166,255,0.8); color: #fff; font-weight: 700;
+  }
+  .sm-cell.all-done {
+    background: rgba(46,160,67,0.25); border-color: rgba(46,160,67,0.8); color: #7ee787;
+  }
+
+  /* Баннер выбранного фильтра */
+  .sm-filter-bar {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    background: rgba(240,136,62,0.12); border: 1px solid var(--orange); border-radius: 6px;
+    padding: 6px 12px; margin-top: 10px; font-size: 12.5px;
+  }
+  .sm-filter-bar strong { color: var(--orange); }
+  .sm-filter-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .sm-filter-reset-btn {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    padding: 4px 10px; border-radius: 5px; font-size: 11.5px; font-weight: 600; cursor: pointer;
+  }
+  .sm-filter-reset-btn:hover { border-color: var(--red); color: var(--red); }
+  .sm-filter-add-btn {
+    background: var(--green); border: 1px solid var(--green2); color: #fff;
+    padding: 4px 10px; border-radius: 5px; font-size: 11.5px; font-weight: 600; cursor: pointer;
+  }
+  .sm-filter-add-btn:hover { filter: brightness(1.15); }
+
+/* Экран блокировки (Ввод пароля) */
   .auth-overlay {
     position: fixed; inset: 0; background: #010409;
     display: flex; align-items: center; justify-content: center;
@@ -463,36 +484,9 @@
     display: inline-flex; align-items: center; gap: 4px;
   }
   .btn-lock:hover { color: var(--text); border-color: var(--muted); }
-
-  @media (max-width: 768px) {
-    input[type="date"], input[type="text"], input[type="number"], select { font-size: 16px !important; }
-    .page { padding: 0 8px; }
-    .navbar { padding: 8px 10px; }
-    .brand { font-size: 13px; }
-    .btn-install { width: 100%; order: 3; margin-top: 6px; justify-content: center; }
-    .searchbar { flex-direction: column; align-items: stretch; padding: 8px 10px; }
-    .searchbox { width: 100%; min-width: 100%; }
-    .btn-reset { width: 100%; text-align: center; }
-    .scroll-hint { display: flex; }
-    .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .toolbar .btn { width: 100%; padding: 10px 6px; font-size: 13px; text-align: center; }
-    .toolbar span[style*="flex:1"] { display: none; }
-    .cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .card { padding: 10px 12px; }
-    .card .num-big { font-size: 22px; }
-    .card .lbl2 { font-size: 11.5px; }
-    .lb-body img { max-width: 86vw; max-height: 65vh; }
-    .lb-nav { width: 38px; height: 38px; font-size: 20px; }
-  }
-
-  @media (max-width: 480px) {
-    .brand .who { display: inline-block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
-    .toolbar { grid-template-columns: 1fr; }
-  }
 </style>
 </head>
 <body>
-
 <!-- Экран авторизации (Пароль 1787) -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card" id="authCard">
@@ -507,6 +501,7 @@
   </div>
 </div>
 
+
 <header class="navbar">
   <div class="nav-left">
     <svg class="burger" height="20" width="20" viewBox="0 0 16 16"><path d="M1 2.75A.75.75 0 0 1 1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75Zm0 5A.75.75 0 0 1 1.75 7h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 7.75ZM1.75 12h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5Z"/></svg>
@@ -516,7 +511,7 @@
 
   <div class="nav-right">
     <span class="save-indicator saving" id="saveIndicator">⏳ Синхронизация...</span>
-    <button class="btn-lock" id="btnLock" title="Заблокировать доступ">🔒 Выйти</button>
+  <button class="btn-lock" id="btnLock" title="Заблокировать доступ">🔒 Выйти</button>
   </div>
 
   <button class="btn-install" id="btnInstall">📲 Установить на экран</button>
@@ -582,7 +577,8 @@
 
   <!-- Вкладка: Планы -->
   <div id="view-plans" class="hidden">
-    <!-- График планов на 6 месяцев -->
+
+    <!-- Компактный график планов на 6 месяцев (3x3 см) -->
     <div class="six-month-container">
       <div class="sm-header">
         <div class="sm-title-group">
@@ -603,7 +599,7 @@
         </div>
       </div>
 
-      <!-- Сетка 6 месяцев -->
+      <!-- Лента 6 мини-месяцев 3x3 см -->
       <div class="six-month-grid" id="sixMonthGrid"></div>
 
       <!-- Плашка активного фильтра по выбранной дате -->
@@ -750,16 +746,6 @@ let dateSortOrder = 'asc';
 let monthSortOrder = 'desc';
 const search = { num:'', client:'' };
 
-// Состояние 6-месячного календаря
-let calBaseDate = new Date(); // Месяц старта 6-месячной сетки
-let calSelectedDate = null;  // Выбранная дата фильтра 'YYYY-MM-DD'
-
-const MONTH_NAMES_FULL = [
-  'Январь','Февраль','Март','Апрель','Май','Июнь',
-  'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'
-];
-const WEEKDAYS_SHORT = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function emptyHours(){ const h={}; EMPLOYEES.forEach(e => { h[e[0]]=0; }); return h; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -826,11 +812,24 @@ function loadCachedData(){
    СИНХРОНИЗАЦИЯ С ОБЛАКОМ FIREBASE
    ========================================================= */
 let saveTimer = null;
+function saveToLocalCache(){
+  try {
+    localStorage.setItem('gidravlika_cache', JSON.stringify({ orders, plans, collapsed, seq }));
+  } catch(e) {
+    // Если на телефоне закончилась квота localStorage (5 МБ) из-за множества фото:
+    // кэшируем без тяжелых фото, чтобы телефон не зависал, а полные фото надежно хранятся в Firebase
+    try {
+      const lightweightOrders = orders.map(o => Object.assign({}, o, { photo: o.photo ? (o.photo.length > 500 ? '[cached]' : o.photo) : null }));
+      localStorage.setItem('gidravlika_cache', JSON.stringify({ orders: lightweightOrders, plans, collapsed, seq }));
+    } catch(e2){}
+  }
+}
+
 function triggerSync(){
   const ind = document.getElementById('saveIndicator');
   if(ind){ ind.className = 'save-indicator saving'; ind.textContent = '⏳ Сохранение...'; }
 
-  try { localStorage.setItem('gidravlika_cache', JSON.stringify({ orders, plans, collapsed, seq })); } catch(e){}
+  saveToLocalCache();
 
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
@@ -876,14 +875,13 @@ function startCloudListener(){
       plans = val.plans || [];
       collapsed = val.collapsed || {};
       seq = val.seq || orders.length;
-      try { localStorage.setItem('gidravlika_cache', JSON.stringify({ orders, plans, collapsed, seq })); } catch(e){}
+      saveToLocalCache();
 
+      // Если пользователь печатает текст прямо сейчас, не перерисовываем DOM таблицы чтобы не сбить фокус
       const activeEl = document.activeElement;
       const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
       if (!isTyping) {
         renderAll();
-      } else {
-        renderSixMonthCalendar();
       }
       if(ind){ ind.className = 'save-indicator cloud'; ind.textContent = '🟢 Облако онлайн ' + new Date().toLocaleTimeString('ru-RU'); }
     } else {
@@ -903,9 +901,10 @@ function statusBtn(o, field){
 }
 
 /* =========================================================
-   ТАБЛИЦА ЗАКАЗОВ: РАЗБИВКА ПО МЕСЯЦАМ И СОРТИРОВКА
+   ТАБЛИЦА ЗАКАЗОВ: РАЗБИВКА ПО МЕСЯЦАМ И СОРТИРОВКА ПО ПОРЯДКУ
    ========================================================= */
 function renderOrders(){
+  // 1. Сортировка всех заказов по дате (по порядку: asc / desc)
   const sorted = orders.slice().sort((a,b) => {
     const da = a.date || '', db = b.date || '';
     if(da !== db) {
@@ -916,6 +915,7 @@ function renderOrders(){
 
   viewPhotos = sorted.filter(o => !!o.photo);
 
+  // 2. Группировка заказов по месяцам (сохраняя выбранный порядок)
   const groupOrder = [];
   const groups = {};
   sorted.forEach(o => {
@@ -927,12 +927,14 @@ function renderOrders(){
     groups[k].push(o);
   });
 
+  // 3. Формирование HTML с разделителями месяцев
   let html = '';
   for(let i=0; i<groupOrder.length; i++){
     const k = groupOrder[i];
     const isCol = !!collapsed[k];
     const monthOrders = groups[k];
     
+    // Подсчет часов за этот месяц
     let monthHours = 0;
     monthOrders.forEach(o => {
       EMPLOYEES.forEach(e => { monthHours += (parseFloat(o.hours[e[0]])||0); });
@@ -946,7 +948,7 @@ function renderOrders(){
       </td>
     </tr>`;
 
-    if(isCol) continue;
+    if(isCol) continue; // Месяц свернут
 
     for(let j=0; j<monthOrders.length; j++){
       const o = monthOrders[j];
@@ -959,7 +961,7 @@ function renderOrders(){
         <td>${statusBtn(o,'accrued')}</td>
         <td class="photo-cell">
           <button class="mini" data-act="photo" data-id="${o.id}">${o.photo?'Изм.':'+ Фото'}</button>
-          ${o.photo ? `<img class="thumb" data-act="view" data-id="${o.id}" src="${o.photo}" alt="фото">` : ''}
+          ${o.photo ? `<img class="thumb" data-act="view" data-id="${o.id}" src="${o.photo}" alt="фото" loading="lazy" decoding="async">` : ''}
         </td>
         <td style="white-space:nowrap;text-align:center">
           <button class="act-btn" title="Дублировать строку" data-act="dup" data-id="${o.id}">＋</button>
@@ -991,9 +993,19 @@ function updateTotals(sortedList){
   document.getElementById('tot-sum').textContent = 'Всего: ' + fmtNum(sum) + ' ч.';
 }
 
+
 /* =========================================================
-   ИНТЕРАКТИВНЫЙ КАЛЕНДАРЬ НА 6 МЕСЯЦЕВ
+   ИНТЕРАКТИВНЫЙ КАЛЕНДАРЬ НА 6 МЕСЯЦЕВ В ПЛАНАХ (3x3 см)
    ========================================================= */
+let calBaseDate = new Date();
+let calSelectedDate = null;
+
+const MONTH_NAMES_FULL = [
+  'Январь','Февраль','Март','Апрель','Май','Июнь',
+  'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'
+];
+const WEEKDAYS_SHORT = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
 function renderSixMonthCalendar(){
   const gridEl = document.getElementById('sixMonthGrid');
   const rangeLabelEl = document.getElementById('smRangeLabel');
@@ -1031,11 +1043,11 @@ function renderSixMonthCalendar(){
     }
 
     const badgeClass = monthTotalPlans > 0 ? 'sm-month-count has' : 'sm-month-count none';
-    const badgeText = monthTotalPlans > 0 ? `${monthTotalPlans} пл.` : '—';
+    const badgeText = monthTotalPlans > 0 ? `${monthTotalPlans}` : '0';
 
     let mHtml = `<div class="sm-month-card">
       <div class="sm-month-header">
-        <span class="sm-month-name">${MONTH_NAMES_FULL[m]} ${y}</span>
+        <span class="sm-month-name">${MONTH_NAMES_FULL[m].slice(0, 4)}. ${String(y).slice(-2)}</span>
         <span class="${badgeClass}">${badgeText}</span>
       </div>
       <div class="sm-weekdays-row">
@@ -1065,7 +1077,6 @@ function renderSixMonthCalendar(){
       if(isToday) cellClass += ' is-today';
       if(isSelected) cellClass += ' is-selected';
 
-      let indicatorHtml = '';
       if(count > 0){
         const hasUrgent = dayPlans.some(p => p.priority === 'urgent' && !p.done);
         const hasActive = dayPlans.some(p => !p.done);
@@ -1078,12 +1089,10 @@ function renderSixMonthCalendar(){
         } else if(allDone){
           cellClass += ' all-done';
         }
-        indicatorHtml = '<span class="sm-indicator"></span>';
       }
 
       mHtml += `<div class="${cellClass}" data-date="${dateISO}" title="${count>0 ? `Планов на ${fmtDate(dateISO)}: ${count}` : fmtDate(dateISO)}">
         <span>${d}</span>
-        ${indicatorHtml}
       </div>`;
     }
 
@@ -1105,9 +1114,6 @@ function renderSixMonthCalendar(){
   }
 }
 
-/* =========================================================
-   ТАБЛИЦА ПЛАНОВ (С УЧЕТОМ КАЛЕНДАРЯ)
-   ========================================================= */
 function renderPlans(){
   renderSixMonthCalendar();
 
@@ -1167,6 +1173,7 @@ function renderSummary(){
     return `<tr><td>${e[1]}</td><td>${fmtNum(tot[e[0]])}</td><td>${share}%</td></tr>`;
   }).join('');
 
+  // Группировка по месяцам в итогах
   const monthsData = {};
   orders.forEach(o => {
     const k = monthKey(o.date);
@@ -1210,10 +1217,11 @@ function renderAll(){
 }
 
 /* =========================================================
-   ОБРАБОТЧИКИ СОБЫТИЙ ТАБЛИЦЫ ЗАКАЗОВ
+   ОБРАБОТЧИКИ СОБЫТИЙ ТАБЛИЦЫ
    ========================================================= */
 const tbody = document.getElementById('tbody');
 
+// При наборе текста обновляем только данные в памяти, не трогая DOM
 tbody.addEventListener('input', e => {
   const el = e.target, id = el.dataset.id;
   const o = orders.find(x => x.id === id);
@@ -1228,6 +1236,7 @@ tbody.addEventListener('input', e => {
   triggerSync();
 });
 
+// При изменении даты пересортировываем таблицу по порядку
 tbody.addEventListener('change', e => {
   const el = e.target, id = el.dataset.id;
   const o = orders.find(x => x.id === id);
@@ -1244,6 +1253,7 @@ tbody.addEventListener('click', e => {
   if(!el) return;
   const act = el.dataset.act, id = el.dataset.id;
 
+  // Сворачивание / разворачивание месяца
   if(act === 'toggle'){
     const m = el.dataset.month;
     collapsed[m] = !collapsed[m];
@@ -1283,6 +1293,7 @@ tbody.addEventListener('click', e => {
   }
 });
 
+/* Переключение сортировки по клику на столбец «Дата» */
 document.getElementById('thSortDate').addEventListener('click', () => {
   dateSortOrder = dateSortOrder === 'asc' ? 'desc' : 'asc';
   renderOrders();
@@ -1293,55 +1304,7 @@ document.getElementById('btnToggleMonthSort').addEventListener('click', () => {
   renderSummary();
 });
 
-/* =========================================================
-   ОБРАБОТЧИКИ НАВИГАЦИИ И КЛИКОВ КАЛЕНДАРЯ НА 6 МЕСЯЦЕВ
-   ========================================================= */
-document.getElementById('smPrev6').addEventListener('click', () => {
-  calBaseDate.setMonth(calBaseDate.getMonth() - 6);
-  renderSixMonthCalendar();
-});
-
-document.getElementById('smNext6').addEventListener('click', () => {
-  calBaseDate.setMonth(calBaseDate.getMonth() + 6);
-  renderSixMonthCalendar();
-});
-
-document.getElementById('smToday').addEventListener('click', () => {
-  calBaseDate = new Date();
-  calSelectedDate = todayISO();
-  renderPlans();
-});
-
-// Клик по дате в календаре для фильтрации
-document.getElementById('sixMonthGrid').addEventListener('click', e => {
-  const cell = e.target.closest('[data-date]');
-  if(!cell || cell.classList.contains('empty')) return;
-  const clickedDate = cell.dataset.date;
-
-  if(calSelectedDate === clickedDate){
-    calSelectedDate = null;
-  } else {
-    calSelectedDate = clickedDate;
-  }
-  renderPlans();
-});
-
-document.getElementById('smResetFilter').addEventListener('click', () => {
-  calSelectedDate = null;
-  renderPlans();
-});
-
-document.getElementById('smAddForSelectedDate').addEventListener('click', () => {
-  const targetDate = calSelectedDate || todayISO();
-  plans.push({ id:uid(), date:targetDate, task:'', comment:'', emp:'', priority:'normal', done:false });
-  triggerSync();
-  renderPlans();
-  renderSummary();
-});
-
-/* =========================================================
-   ОБРАБОТЧИКИ ПЛАНОВ
-   ========================================================= */
+/* Слушатели планов */
 const tbodyPlans = document.getElementById('tbodyPlans');
 tbodyPlans.addEventListener('input', e => {
   const el = e.target, id = el.dataset.planId;
@@ -1356,10 +1319,7 @@ tbodyPlans.addEventListener('change', e => {
   const el = e.target, id = el.dataset.planId;
   const p = plans.find(x => x.id === id);
   if(p){
-    if(el.dataset.planField === 'date'){
-      p.date = el.value;
-      renderSixMonthCalendar();
-    }
+    if(el.dataset.planField === 'date') p.date = el.value;
     else if(el.dataset.planField === 'emp') p.emp = el.value;
     triggerSync();
   }
@@ -1433,7 +1393,7 @@ document.querySelectorAll('.tab').forEach(t => {
   });
 });
 
-/* Загрузка и сжатие фото */
+/* Загрузка и оптимизированное сжатие фото для мгновенной загрузки */
 document.getElementById('fileInput').addEventListener('change', e => {
   const file = e.target.files[0];
   e.target.value = '';
@@ -1442,14 +1402,23 @@ document.getElementById('fileInput').addEventListener('change', e => {
   reader.onload = ev => {
     const img = new Image();
     img.onload = () => {
-      const max = 800;
+      // Оптимальный размер: максимум 750px по длинной стороне и качество 0.60
+      // Это уменьшает вес фото в 4-5 раз (с 300 КБ до ~50 КБ), ускоряя загрузку на телефоне
+      const max = 750;
       let w = img.width, h = img.height;
-      if(w > max || h > max){ const k = max/Math.max(w,h); w = Math.round(w*k); h = Math.round(h*k); }
-      const c = document.createElement('canvas'); c.width = w; c.height = h;
-      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      if(w > max || h > max){
+        const k = max / Math.max(w, h);
+        w = Math.round(w * k);
+        h = Math.round(h * k);
+      }
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext('2d', { alpha: false });
+      ctx.drawImage(img, 0, 0, w, h);
       const o = orders.find(x => x.id === photoTargetId);
       if(o){
-        o.photo = c.toDataURL('image/jpeg', 0.75);
+        o.photo = c.toDataURL('image/jpeg', 0.60);
         triggerSync();
         renderOrders();
         renderSummary();
@@ -1542,11 +1511,23 @@ document.getElementById('btnHtml').addEventListener('click', () => {
 });
 
 /* =========================================================
-   СКАЧАТЬ EXCEL (.XLSX)
+   СКАЧАТЬ EXCEL (.XLSX) С ДИНАМИЧЕСКОЙ ЗАГРУЗКОЙ БИБЛИОТЕКИ
    ========================================================= */
+function ensureSheetJS(callback){
+  if(typeof XLSX !== 'undefined') return callback();
+  const btn = document.getElementById('btnExcel');
+  const prevText = btn.textContent;
+  btn.textContent = '⏳ Загрузка Excel...';
+  const s = document.createElement('script');
+  s.src = 'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';
+  s.onload = () => { btn.textContent = prevText; callback(); };
+  s.onerror = () => { btn.textContent = prevText; alert('Не удалось загрузить библиотеку Excel.'); };
+  document.head.appendChild(s);
+}
+
 document.getElementById('btnExcel').addEventListener('click', () => {
-  try {
-    if(typeof XLSX !== 'undefined'){
+  ensureSheetJS(() => {
+    try {
       const wb = XLSX.utils.book_new();
       const st = v => v==='yes'?'Да':v==='no'?'Нет':'—';
 
@@ -1572,11 +1553,12 @@ document.getElementById('btnExcel').addEventListener('click', () => {
 
       XLSX.writeFile(wb, 'Отчет_Гидравлика_Сервис.xlsx');
       return;
+    } catch(err){
+      console.warn('SheetJS error, fallback to HTML:', err);
     }
-  } catch(err){
-    console.warn('SheetJS error, fallback to HTML:', err);
-  }
+  });
 
+  // Fallback
   try {
     const st = v => v==='yes'?'Да':v==='no'?'Нет':'—';
     let tableHtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
@@ -1643,6 +1625,16 @@ modalClose.addEventListener('click', () => { modalInstall.classList.remove('open
 modalInstall.addEventListener('click', e => { if(e.target === modalInstall) modalInstall.classList.remove('open'); });
 
 /* =========================================================
+   ИНИЦИАЛИЗАЦИЯ:
+   1. Отрисовка колонок сотрудников
+   2. Мгновенный показ из кэша (0 мс)
+   3. Фоновое подключение к Firebase
+   ========================================================= */
+document.getElementById('empHead').innerHTML = EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('');
+loadCachedData();
+startCloudListener();
+
+/* =========================================================
    АВТОРИЗАЦИЯ И ПАРОЛЬ ДОСТУПА (1787)
    ========================================================= */
 const APP_PASSWORD = "1787";
@@ -1680,7 +1672,7 @@ function submitAuth(){
   } else {
     err.style.display = 'block';
     card.classList.remove('shake');
-    void card.offsetWidth;
+    void card.offsetWidth; // trigger reflow
     card.classList.add('shake');
     inp.value = '';
     inp.focus();
@@ -1698,13 +1690,54 @@ document.getElementById('btnLock').addEventListener('click', () => {
   setTimeout(() => { if(inp) inp.focus(); }, 150);
 });
 
+// Проверка пароля при запуске
+
 /* =========================================================
-   ИНИЦИАЛИЗАЦИЯ:
+   ОБРАБОТЧИКИ НАВИГАЦИИ И КЛИКОВ КАЛЕНДАРЯ НА 6 МЕСЯЦЕВ
    ========================================================= */
-document.getElementById('empHead').innerHTML = EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('');
+document.getElementById('smPrev6').addEventListener('click', () => {
+  calBaseDate.setMonth(calBaseDate.getMonth() - 6);
+  renderSixMonthCalendar();
+});
+
+document.getElementById('smNext6').addEventListener('click', () => {
+  calBaseDate.setMonth(calBaseDate.getMonth() + 6);
+  renderSixMonthCalendar();
+});
+
+document.getElementById('smToday').addEventListener('click', () => {
+  calBaseDate = new Date();
+  calSelectedDate = todayISO();
+  renderPlans();
+});
+
+document.getElementById('sixMonthGrid').addEventListener('click', e => {
+  const cell = e.target.closest('[data-date]');
+  if(!cell || cell.classList.contains('empty')) return;
+  const clickedDate = cell.dataset.date;
+
+  if(calSelectedDate === clickedDate){
+    calSelectedDate = null;
+  } else {
+    calSelectedDate = clickedDate;
+  }
+  renderPlans();
+});
+
+document.getElementById('smResetFilter').addEventListener('click', () => {
+  calSelectedDate = null;
+  renderPlans();
+});
+
+document.getElementById('smAddForSelectedDate').addEventListener('click', () => {
+  const targetDate = calSelectedDate || todayISO();
+  plans.push({ id:uid(), date:targetDate, task:'', comment:'', emp:'', priority:'normal', done:false });
+  triggerSync();
+  renderPlans();
+  renderSummary();
+});
+
 checkAuth();
-loadCachedData();
-startCloudListener();
 </script>
 </body>
 </html>
