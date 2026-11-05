@@ -14,7 +14,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-<!-- SheetJS для выгрузки Excel (.xlsx) -->
 <!-- SheetJS загружается по требованию при клике на выгрузку Excel -->
 
 <style>
@@ -237,75 +236,6 @@
     margin-bottom: 6px; align-items: center; justify-content: flex-end; gap: 4px;
   }
 
-  /* Lightbox */
-  .lightbox {
-    position: fixed; inset: 0; background: rgba(1,4,9,.94);
-    display: none; flex-direction: column; z-index: 100;
-  }
-  .lightbox.open { display: flex; }
-  .lb-top { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
-  .lb-btn {
-    background: var(--panel2); border: 1px solid var(--border); border-radius: 6px;
-    color: var(--text); padding: 8px 14px; font-size: 13.5px; cursor: pointer; min-height: 40px;
-  }
-  .lb-btn:hover { border-color: var(--blue); color: var(--blue); }
-  .lb-counter { color: var(--muted); font-size: 13px; }
-  .lb-body { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 10px; min-height: 0; }
-  .lb-body img { max-width: 90vw; max-height: 70vh; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 8px 40px rgba(0,0,0,.7); }
-  .lb-nav {
-    background: var(--panel2); border: 1px solid var(--border); border-radius: 50%;
-    width: 44px; height: 44px; font-size: 24px; color: var(--text); cursor: pointer; flex-shrink: 0;
-  }
-  .lb-nav:disabled { opacity: .3; cursor: default; }
-  .lb-caption { text-align: center; color: var(--muted); font-size: 13px; padding: 12px 16px; }
-
-  /* Модальное окно установки */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(1,4,9,.85);
-    display: none; align-items: center; justify-content: center; z-index: 200; padding: 16px;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal-card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-    max-width: 480px; width: 100%; padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.8);
-  }
-  .modal-card h3 { font-size: 17px; margin-bottom: 10px; color: var(--text); }
-  .modal-card p { font-size: 13.5px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
-  .modal-card ol { margin-left: 18px; font-size: 13.5px; color: var(--text); line-height: 1.6; margin-bottom: 16px; }
-  .modal-close {
-    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
-    padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; min-height: 44px;
-  }
-
-  @media (max-width: 768px) {
-    input[type="date"], input[type="text"], input[type="number"], select {
-      font-size: 16px !important;
-    }
-    .page { padding: 0 8px; }
-    .navbar { padding: 8px 10px; }
-    .brand { font-size: 13px; }
-    .btn-install { width: 100%; order: 3; margin-top: 6px; justify-content: center; }
-    .searchbar { flex-direction: column; align-items: stretch; padding: 8px 10px; }
-    .searchbox { width: 100%; min-width: 100%; }
-    .btn-reset { width: 100%; text-align: center; }
-    .scroll-hint { display: flex; }
-    .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .toolbar .btn { width: 100%; padding: 10px 6px; font-size: 13px; text-align: center; }
-    .toolbar span[style*="flex:1"] { display: none; }
-    .cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .card { padding: 10px 12px; }
-    .card .num-big { font-size: 22px; }
-    .card .lbl2 { font-size: 11.5px; }
-    .lb-body img { max-width: 86vw; max-height: 65vh; }
-    .lb-nav { width: 38px; height: 38px; font-size: 20px; }
-  }
-
-  @media (max-width: 480px) {
-    .brand .who { display: inline-block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
-    .toolbar { grid-template-columns: 1fr; }
-  }
-
-  
   /* ---------------------------------------------------------
      КОМПАКТНЫЙ КАЛЕНДАРЬ НА 6 МЕСЯЦЕВ (3x3 см)
      --------------------------------------------------------- */
@@ -440,7 +370,75 @@
   }
   .sm-filter-add-btn:hover { filter: brightness(1.15); }
 
-/* Экран блокировки (Ввод пароля) */
+  /* Lightbox */
+  .lightbox {
+    position: fixed; inset: 0; background: rgba(1,4,9,.94);
+    display: none; flex-direction: column; z-index: 100;
+  }
+  .lightbox.open { display: flex; }
+  .lb-top { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
+  .lb-btn {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 8px 14px; font-size: 13.5px; cursor: pointer; min-height: 40px;
+  }
+  .lb-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .lb-counter { color: var(--muted); font-size: 13px; }
+  .lb-body { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 10px; min-height: 0; }
+  .lb-body img { max-width: 90vw; max-height: 70vh; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 8px 40px rgba(0,0,0,.7); }
+  .lb-nav {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 50%;
+    width: 44px; height: 44px; font-size: 24px; color: var(--text); cursor: pointer; flex-shrink: 0;
+  }
+  .lb-nav:disabled { opacity: .3; cursor: default; }
+  .lb-caption { text-align: center; color: var(--muted); font-size: 13px; padding: 12px 16px; }
+
+  /* Модальное окно установки */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(1,4,9,.85);
+    display: none; align-items: center; justify-content: center; z-index: 200; padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    max-width: 480px; width: 100%; padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.8);
+  }
+  .modal-card h3 { font-size: 17px; margin-bottom: 10px; color: var(--text); }
+  .modal-card p { font-size: 13.5px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+  .modal-card ol { margin-left: 18px; font-size: 13.5px; color: var(--text); line-height: 1.6; margin-bottom: 16px; }
+  .modal-close {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; min-height: 44px;
+  }
+
+  @media (max-width: 768px) {
+    input[type="date"], input[type="text"], input[type="number"], select {
+      font-size: 16px !important;
+    }
+    .page { padding: 0 8px; }
+    .navbar { padding: 8px 10px; }
+    .brand { font-size: 13px; }
+    .btn-install { width: 100%; order: 3; margin-top: 6px; justify-content: center; }
+    .searchbar { flex-direction: column; align-items: stretch; padding: 8px 10px; }
+    .searchbox { width: 100%; min-width: 100%; }
+    .btn-reset { width: 100%; text-align: center; }
+    .scroll-hint { display: flex; }
+    .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .toolbar .btn { width: 100%; padding: 10px 6px; font-size: 13px; text-align: center; }
+    .toolbar span[style*="flex:1"] { display: none; }
+    .cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .card { padding: 10px 12px; }
+    .card .num-big { font-size: 22px; }
+    .card .lbl2 { font-size: 11.5px; }
+    .lb-body img { max-width: 86vw; max-height: 65vh; }
+    .lb-nav { width: 38px; height: 38px; font-size: 20px; }
+  }
+
+  @media (max-width: 480px) {
+    .brand .who { display: inline-block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+    .toolbar { grid-template-columns: 1fr; }
+  }
+
+  /* Экран блокировки (Ввод пароля) */
   .auth-overlay {
     position: fixed; inset: 0; background: #010409;
     display: flex; align-items: center; justify-content: center;
@@ -543,17 +541,15 @@
   </div>
 </div>
 
-
 <header class="navbar">
   <div class="nav-left">
     <svg class="burger" height="20" width="20" viewBox="0 0 16 16"><path d="M1 2.75A.75.75 0 0 1 1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75Zm0 5A.75.75 0 0 1 1.75 7h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 7.75ZM1.75 12h12.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1 0-1.5Z"/></svg>
-    <svg height="24" width="24" viewBox="0 0 16 16"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
     <span class="brand"><span class="who">Гидравлика Сервис</span><span class="slash">/</span><span class="repo">онлайн-облако</span></span>
   </div>
 
   <div class="nav-right">
     <span class="save-indicator saving" id="saveIndicator">⏳ Синхронизация...</span>
-  <button class="btn-lock" id="btnLock" title="Заблокировать доступ">🔒 Выйти</button>
+    <button class="btn-lock" id="btnLock" title="Заблокировать доступ">🔒 Выйти</button>
   </div>
 
   <button class="btn-install" id="btnInstall">📲 Установить на экран</button>
@@ -877,8 +873,6 @@ function saveToLocalCache(){
   try {
     localStorage.setItem('gidravlika_cache', JSON.stringify({ orders, plans, collapsed, seq }));
   } catch(e) {
-    // Если на телефоне закончилась квота localStorage (5 МБ) из-за множества фото:
-    // кэшируем без тяжелых фото, чтобы телефон не зависал, а полные фото надежно хранятся в Firebase
     try {
       const lightweightOrders = orders.map(o => Object.assign({}, o, { photo: o.photo ? (o.photo.length > 500 ? '[cached]' : o.photo) : null }));
       localStorage.setItem('gidravlika_cache', JSON.stringify({ orders: lightweightOrders, plans, collapsed, seq }));
@@ -942,11 +936,14 @@ function startCloudListener(){
       seq = val.seq || orders.length;
       saveToLocalCache();
 
-      // Если пользователь печатает текст прямо сейчас, не перерисовываем DOM таблицы чтобы не сбить фокус
+      // Блокируем перерисовку ТОЛЬКО если курсор стоит внутри таблицы заказов или планов
       const activeEl = document.activeElement;
-      const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-      if (!isTyping) {
+      const isEditingTable = activeEl && (activeEl.closest('#tbody') || activeEl.closest('#tbodyPlans'));
+      
+      if (!isEditingTable) {
         renderAll();
+      } else {
+        renderSixMonthCalendar();
       }
       if(ind){ ind.className = 'save-indicator cloud'; ind.textContent = '🟢 Облако онлайн ' + new Date().toLocaleTimeString('ru-RU'); }
     } else {
@@ -970,7 +967,6 @@ function statusBtn(o, field){
    ТАБЛИЦА ЗАКАЗОВ: РАЗБИВКА ПО МЕСЯЦАМ И СОРТИРОВКА ПО ПОРЯДКУ
    ========================================================= */
 function renderOrders(){
-  // 1. Сортировка всех заказов по дате (по порядку: asc / desc)
   const sorted = orders.slice().sort((a,b) => {
     const da = a.date || '', db = b.date || '';
     if(da !== db) {
@@ -981,7 +977,6 @@ function renderOrders(){
 
   viewPhotos = sorted.filter(o => !!o.photo);
 
-  // 2. Группировка заказов по месяцам (сохраняя выбранный порядок)
   const groupOrder = [];
   const groups = {};
   sorted.forEach(o => {
@@ -993,14 +988,12 @@ function renderOrders(){
     groups[k].push(o);
   });
 
-  // 3. Формирование HTML с разделителями месяцев
   let html = '';
   for(let i=0; i<groupOrder.length; i++){
     const k = groupOrder[i];
     const isCol = !!collapsed[k];
     const monthOrders = groups[k];
     
-    // Подсчет часов за этот месяц
     let monthHours = 0;
     monthOrders.forEach(o => {
       EMPLOYEES.forEach(e => { monthHours += (parseFloat(o.hours[e[0]])||0); });
@@ -1014,7 +1007,7 @@ function renderOrders(){
       </td>
     </tr>`;
 
-    if(isCol) continue; // Месяц свернут
+    if(isCol) continue;
 
     for(let j=0; j<monthOrders.length; j++){
       const o = monthOrders[j];
@@ -1241,7 +1234,6 @@ function renderSummary(){
     return `<tr><td>${e[1]}</td><td>${fmtNum(tot[e[0]])}</td><td>${share}%</td></tr>`;
   }).join('');
 
-  // Группировка по месяцам в итогах
   const monthsData = {};
   orders.forEach(o => {
     const k = monthKey(o.date);
@@ -1289,7 +1281,6 @@ function renderAll(){
    ========================================================= */
 const tbody = document.getElementById('tbody');
 
-// При наборе текста обновляем только данные в памяти, не трогая DOM
 tbody.addEventListener('input', e => {
   const el = e.target, id = el.dataset.id;
   const o = orders.find(x => x.id === id);
@@ -1304,7 +1295,6 @@ tbody.addEventListener('input', e => {
   triggerSync();
 });
 
-// При изменении даты пересортировываем таблицу по порядку
 tbody.addEventListener('change', e => {
   const el = e.target, id = el.dataset.id;
   const o = orders.find(x => x.id === id);
@@ -1321,7 +1311,6 @@ tbody.addEventListener('click', e => {
   if(!el) return;
   const act = el.dataset.act, id = el.dataset.id;
 
-  // Сворачивание / разворачивание месяца
   if(act === 'toggle'){
     const m = el.dataset.month;
     collapsed[m] = !collapsed[m];
@@ -1361,7 +1350,6 @@ tbody.addEventListener('click', e => {
   }
 });
 
-/* Переключение сортировки по клику на столбец «Дата» */
 document.getElementById('thSortDate').addEventListener('click', () => {
   dateSortOrder = dateSortOrder === 'asc' ? 'desc' : 'asc';
   renderOrders();
@@ -1387,7 +1375,10 @@ tbodyPlans.addEventListener('change', e => {
   const el = e.target, id = el.dataset.planId;
   const p = plans.find(x => x.id === id);
   if(p){
-    if(el.dataset.planField === 'date') p.date = el.value;
+    if(el.dataset.planField === 'date'){
+      p.date = el.value;
+      renderSixMonthCalendar();
+    }
     else if(el.dataset.planField === 'emp') p.emp = el.value;
     triggerSync();
   }
@@ -1461,7 +1452,7 @@ document.querySelectorAll('.tab').forEach(t => {
   });
 });
 
-/* Загрузка и оптимизированное сжатие фото для мгновенной загрузки */
+/* Загрузка и оптимизированное сжатие фото */
 document.getElementById('fileInput').addEventListener('change', e => {
   const file = e.target.files[0];
   e.target.value = '';
@@ -1470,8 +1461,6 @@ document.getElementById('fileInput').addEventListener('change', e => {
   reader.onload = ev => {
     const img = new Image();
     img.onload = () => {
-      // Оптимальный размер: максимум 750px по длинной стороне и качество 0.60
-      // Это уменьшает вес фото в 4-5 раз (с 300 КБ до ~50 КБ), ускоряя загрузку на телефоне
       const max = 750;
       let w = img.width, h = img.height;
       if(w > max || h > max){
@@ -1520,9 +1509,7 @@ document.getElementById('lbPrev').addEventListener('click', () => { if(lbIndex>0
 document.getElementById('lbNext').addEventListener('click', () => { if(lbIndex<viewPhotos.length-1){ lbIndex++; updateLightbox(); } });
 document.getElementById('lightbox').addEventListener('click', e => { if(e.target.id==='lightbox') closeLightbox(); });
 
-/* =========================================================
-   СКАЧАТЬ ОТЧЕТ С ФОТО (HTML)
-   ========================================================= */
+/* Экспорт в HTML */
 document.getElementById('btnHtml').addEventListener('click', () => {
   const rows = orders.slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
   const st = v => v==='yes'?'Да':v==='no'?'Нет':'—';
@@ -1578,9 +1565,7 @@ document.getElementById('btnHtml').addEventListener('click', () => {
   document.body.appendChild(a); a.click(); a.remove();
 });
 
-/* =========================================================
-   СКАЧАТЬ EXCEL (.XLSX) С ДИНАМИЧЕСКОЙ ЗАГРУЗКОЙ БИБЛИОТЕКИ
-   ========================================================= */
+/* Экспорт в Excel */
 function ensureSheetJS(callback){
   if(typeof XLSX !== 'undefined') return callback();
   const btn = document.getElementById('btnExcel');
@@ -1626,7 +1611,6 @@ document.getElementById('btnExcel').addEventListener('click', () => {
     }
   });
 
-  // Fallback
   try {
     const st = v => v==='yes'?'Да':v==='no'?'Нет':'—';
     let tableHtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
@@ -1694,9 +1678,6 @@ modalInstall.addEventListener('click', e => { if(e.target === modalInstall) moda
 
 /* =========================================================
    ИНИЦИАЛИЗАЦИЯ:
-   1. Отрисовка колонок сотрудников
-   2. Мгновенный показ из кэша (0 мс)
-   3. Фоновое подключение к Firebase
    ========================================================= */
 document.getElementById('empHead').innerHTML = EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('');
 loadCachedData();
@@ -1712,6 +1693,7 @@ function checkAuth(){
   const overlay = document.getElementById('authOverlay');
   if(saved === APP_PASSWORD){
     overlay.style.display = 'none';
+    renderAll();
   } else {
     overlay.style.display = 'flex';
     setTimeout(() => {
@@ -1736,11 +1718,12 @@ function submitAuth(){
     setTimeout(() => {
       overlay.style.display = 'none';
       overlay.style.opacity = '1';
+      renderAll();
     }, 250);
   } else {
     err.style.display = 'block';
     card.classList.remove('shake');
-    void card.offsetWidth; // trigger reflow
+    void card.offsetWidth;
     card.classList.add('shake');
     inp.value = '';
     inp.focus();
@@ -1757,8 +1740,6 @@ document.getElementById('btnLock').addEventListener('click', () => {
   overlay.style.display = 'flex';
   setTimeout(() => { if(inp) inp.focus(); }, 150);
 });
-
-// Проверка пароля при запуске
 
 /* =========================================================
    ОБРАБОТЧИКИ НАВИГАЦИИ И КЛИКОВ КАЛЕНДАРЯ НА 6 МЕСЯЦЕВ
