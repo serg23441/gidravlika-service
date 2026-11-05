@@ -1241,6 +1241,187 @@ document.getElementById('lbClose').addEventListener('click', () => { document.ge
 document.getElementById('lbBack').addEventListener('click', () => { document.getElementById('lightbox').classList.remove('open'); });
 
 /* =========================================================
+   ИСПРАВЛЕННЫЙ ЭКСПОРТ В HTML И EXCEL
+   ========================================================= */
+
+// 1. Скачать отчет с фото (HTML)
+const btnHtml = document.getElementById('btnHtml');
+if (btnHtml) {
+  btnHtml.addEventListener('click', () => {
+    try {
+      const rows = orders.slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+      const st = v => v==='yes' ? 'Да' : (v==='no' ? 'Нет' : '—');
+      const photoRows = rows.map((o,i) => ({o,i})).filter(x => !!x.o.photo);
+      
+      let trs = '';
+      rows.forEach((o,i) => {
+        trs += `<tr id="r${i}">
+          <td>${fmtDate(o.date)}</td>
+          <td>${esc(o.num)}</td>
+          <td>${esc(o.client)}</td>
+          ${EMPLOYEES.map(e => `<td>${o.hours[e[0]]||0}</td>`).join('')}
+          <td>${st(o.paid)}</td>
+          <td>${st(o.accrued)}</td>
+          <td>${o.photo ? `<a class="ph-link" href="#f${i}">📷 фото</a>` : '—'}</td>
+        </tr>`;
+      });
+
+      let photos = '';
+      photoRows.forEach((x,k) => {
+        const prev = photoRows[k-1], next = photoRows[k+1];
+        photos += `<div class="ph" id="f${x.i}">
+          <div class="ph-nav">
+            <a class="btn2" href="#r${x.i}">↑ Назад к таблице</a>
+            ${prev ? `<a class="btn2" href="#f${prev.i}">← Предыдущее</a>` : '<span class="btn2 dis">← Предыдущее</span>'}
+            <span class="cnt">${k+1} / ${photoRows.length}</span>
+            ${next ? `<a class="btn2" href="#f${next.i}">Следующее →</a>` : '<span class="btn2 dis">Следующее →</span>'}
+          </div>
+          <h3>Заказ от ${fmtDate(x.o.date)} № ${esc(x.o.num)||'—'} — ${esc(x.o.client)}</h3>
+          <img src="${x.o.photo}" style="max-width:100%;border-radius:6px;display:block;">
+        </div>`;
+      });
+
+      let planTrs = '';
+      plans.forEach((p, idx) => {
+        const empName = (EMPLOYEES.find(e => e[0]===p.emp)||['','—'])[1];
+        planTrs += `<tr>
+          <td>${idx+1}</td>
+          <td>${fmtDate(p.date)}</td>
+          <td>${esc(p.task)}</td>
+          <td>${esc(p.comment||'—')}</td>
+          <td>${empName}</td>
+          <td>${p.priority==='urgent'?'Важное':'Обычное'}</td>
+          <td>${p.done?'Выполнено':'В работе'}</td>
+        </tr>`;
+      });
+
+      const doc = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Отчет — Гидравлика Сервис</title>
+      <style>
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#0d1117;color:#e6edf3;padding:24px}
+        h1,h2{text-align:center;margin-top:20px}a{color:#58a6ff}table{border-collapse:collapse;width:100%;margin:20px 0}
+        th,td{border:1px solid #30363d;padding:8px 10px;text-align:center;font-size:14px}th{background:#161b22;color:#8b949e}
+        .ph{max-width:900px;margin:30px auto;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:18px}
+        .ph-nav{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+        .btn2{background:#21262d;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:7px 14px;font-size:13.5px;text-decoration:none}
+      </style></head><body>
+      <h1>Отчет — «Гидравлика Сервис»</h1>
+      <p style="text-align:center;color:#8b949e">Сформирован: ${new Date().toLocaleString('ru-RU')}</p>
+      <h2>Заказы</h2>
+      <table><thead><tr><th>Дата</th><th>№ заказа</th><th>Клиент</th>${EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('')}<th>Оплачено</th><th>Начислено</th><th>Фото</th></tr></thead><tbody>${trs||'<tr><td colspan="12">Нет заказов</td></tr>'}</tbody></table>
+      <h2>Планы и задачи</h2>
+      <table><thead><tr><th>№</th><th>Дата</th><th>Задача</th><th>Комментарий</th><th>Ответственный</th><th>Приоритет</th><th>Статус</th></tr></thead><tbody>${planTrs||'<tr><td colspan="7">Нет планов</td></tr>'}</tbody></table>
+      <h2>Фото актов</h2>${photos||'<p style="text-align:center;color:#8b949e">Фото не приложены.</p>'}
+      </body></html>`;
+
+      const blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Отчет_Гидравлика_${todayISO()}.html`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch(err) {
+      alert('Ошибка формирования отчета: ' + err.message);
+    }
+  });
+}
+
+// 2. Скачать Excel (.xlsx)
+function downloadExcelDirectly() {
+  const st = v => v==='yes' ? 'Да' : (v==='no' ? 'Нет' : '—');
+  let tableHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+  <head><meta charset="utf-8"></head>
+  <body>
+    <h2>Заказы — Гидравлика Сервис</h2>
+    <table border="1">
+      <thead>
+        <tr style="background:#ddd;">
+          <th>Дата</th><th>№ заказа</th><th>Клиент</th>
+          ${EMPLOYEES.map(e => '<th>' + e[1] + '</th>').join('')}
+          <th>Хозяйство оплатило</th><th>Начислено</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${orders.map(o => `<tr>
+          <td>${fmtDate(o.date)}</td>
+          <td>${esc(o.num)}</td>
+          <td>${esc(o.client)}</td>
+          ${EMPLOYEES.map(e => `<td>${o.hours[e[0]]||0}</td>`).join('')}
+          <td>${st(o.paid)}</td>
+          <td>${st(o.accrued)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <br>
+    <h2>Планы</h2>
+    <table border="1">
+      <thead>
+        <tr style="background:#ddd;">
+          <th>№</th><th>Дата</th><th>Задача</th><th>Комментарий</th><th>Ответственный</th><th>Приоритет</th><th>Статус</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${plans.map((p, i) => {
+          const emp = (EMPLOYEES.find(e => e[0]===p.emp)||['',''])[1];
+          return `<tr>
+            <td>${i+1}</td>
+            <td>${fmtDate(p.date)}</td>
+            <td>${esc(p.task)}</td>
+            <td>${esc(p.comment||'')}</td>
+            <td>${emp}</td>
+            <td>${p.priority==='urgent'?'Важное':'Обычное'}</td>
+            <td>${p.done?'Выполнено':'В работе'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </body></html>`;
+
+  const blob = new Blob(['\ufeff' + tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Отчет_Гидравлика_${todayISO()}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+const btnExcel = document.getElementById('btnExcel');
+if (btnExcel) {
+  btnExcel.addEventListener('click', () => {
+    if (typeof XLSX !== 'undefined') {
+      try {
+        const wb = XLSX.utils.book_new();
+        const st = v => v==='yes' ? 'Да' : (v==='no' ? 'Нет' : '—');
+
+        const ordersData = [['Дата', '№ заказа', 'Клиент', ...EMPLOYEES.map(e => e[1]), 'Хозяйство оплатило', 'Начислено']];
+        orders.forEach(o => {
+          ordersData.push([
+            fmtDate(o.date), o.num, o.client,
+            ...EMPLOYEES.map(e => parseFloat(o.hours[e[0]])||0),
+            st(o.paid), st(o.accrued)
+          ]);
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ordersData), 'Заказы');
+
+        const plansData = [['№', 'Дата/Срок', 'Задача', 'Комментарий', 'Ответственный', 'Приоритет', 'Статус']];
+        plans.forEach((p, i) => {
+          const empItem = EMPLOYEES.find(e => e[0]===p.emp);
+          plansData.push([i+1, fmtDate(p.date), p.task, p.comment||'', empItem ? empItem[1] : '', p.priority==='urgent'?'Важное':'Обычное', p.done?'Выполнено':'В работе']);
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(plansData), 'Планы');
+
+        XLSX.writeFile(wb, `Отчет_Гидравлика_${todayISO()}.xlsx`);
+        return;
+      } catch (err) {
+        console.warn('Сбой XLSX, переключение на резервный экспорт:', err);
+      }
+    }
+    downloadExcelDirectly();
+  });
+}
+
+/* =========================================================
    АВТОРИЗАЦИЯ (ПАРОЛЬ 1787)
    ========================================================= */
 const APP_PASSWORD = "1787";
