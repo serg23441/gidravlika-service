@@ -429,7 +429,7 @@
 </head>
 <body>
 
-<!-- Экран авторизации (Пароль 1787) -->
+<!-- Экран блокировки (Пароль 1787) -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card" id="authCard">
     <div class="auth-icon">🔒</div>
@@ -1240,11 +1240,7 @@ document.getElementById('fileInput').addEventListener('change', e => {
 document.getElementById('lbClose').addEventListener('click', () => { document.getElementById('lightbox').classList.remove('open'); });
 document.getElementById('lbBack').addEventListener('click', () => { document.getElementById('lightbox').classList.remove('open'); });
 
-/* =========================================================
-   ИСПРАВЛЕННЫЙ ЭКСПОРТ В HTML И EXCEL
-   ========================================================= */
-
-// 1. Скачать отчет с фото (HTML)
+/* Экспорт в HTML */
 const btnHtml = document.getElementById('btnHtml');
 if (btnHtml) {
   btnHtml.addEventListener('click', () => {
@@ -1326,7 +1322,7 @@ if (btnHtml) {
   });
 }
 
-// 2. Скачать Excel (.xlsx)
+/* Экспорт в Excel */
 function downloadExcelDirectly() {
   const st = v => v==='yes' ? 'Да' : (v==='no' ? 'Нет' : '—');
   let tableHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -1389,41 +1385,53 @@ function downloadExcelDirectly() {
 const btnExcel = document.getElementById('btnExcel');
 if (btnExcel) {
   btnExcel.addEventListener('click', () => {
-    if (typeof XLSX !== 'undefined') {
-      try {
-        const wb = XLSX.utils.book_new();
-        const st = v => v==='yes' ? 'Да' : (v==='no' ? 'Нет' : '—');
-
-        const ordersData = [['Дата', '№ заказа', 'Клиент', ...EMPLOYEES.map(e => e[1]), 'Хозяйство оплатило', 'Начислено']];
-        orders.forEach(o => {
-          ordersData.push([
-            fmtDate(o.date), o.num, o.client,
-            ...EMPLOYEES.map(e => parseFloat(o.hours[e[0]])||0),
-            st(o.paid), st(o.accrued)
-          ]);
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ordersData), 'Заказы');
-
-        const plansData = [['№', 'Дата/Срок', 'Задача', 'Комментарий', 'Ответственный', 'Приоритет', 'Статус']];
-        plans.forEach((p, i) => {
-          const empItem = EMPLOYEES.find(e => e[0]===p.emp);
-          plansData.push([i+1, fmtDate(p.date), p.task, p.comment||'', empItem ? empItem[1] : '', p.priority==='urgent'?'Важное':'Обычное', p.done?'Выполнено':'В работе']);
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(plansData), 'Планы');
-
-        XLSX.writeFile(wb, `Отчет_Гидравлика_${todayISO()}.xlsx`);
-        return;
-      } catch (err) {
-        console.warn('Сбой XLSX, переключение на резервный экспорт:', err);
-      }
-    }
     downloadExcelDirectly();
   });
 }
 
-/* =========================================================
-   АВТОРИЗАЦИЯ (ПАРОЛЬ 1787)
-   ========================================================= */
+/* Установка PWA */
+let deferredPrompt = null;
+const installBtn = document.getElementById('btnInstall');
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (installBtn) {
+    installBtn.style.background = '#238636';
+    installBtn.textContent = '📥 Установить приложение';
+  }
+});
+
+if (installBtn) {
+  installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        installBtn.style.display = 'none';
+      }
+      deferredPrompt = null;
+      return;
+    }
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      alert('Чтобы установить на iPhone:\n1. Нажмите «Поделиться» (значок стрелки вверх внизу экрана)\n2. Выберите «На экран „Домой“»');
+    } else {
+      alert('Инструкция по установке:\n1. Нажмите меню браузера (три точки в правом верхнем углу)\n2. Выберите «Установить приложение» или «Добавить на главный экран»');
+    }
+  });
+}
+
+window.addEventListener('appinstalled', () => {
+  if (installBtn) installBtn.style.display = 'none';
+  deferredPrompt = null;
+});
+
+if (window.matchMedia('(display-mode: standalone)').matches && installBtn) {
+  installBtn.style.display = 'none';
+}
+
+/* Авторизация (Пароль 1787) */
 const APP_PASSWORD = "1787";
 
 function checkAuth(){
