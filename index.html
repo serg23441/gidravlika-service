@@ -1008,13 +1008,61 @@ function renderSummary(){
   let sum = 0; const tot = {}; EMPLOYEES.forEach(e => tot[e[0]]=0);
   orders.forEach(o => EMPLOYEES.forEach(e => { const h = parseFloat(o.hours[e[0]])||0; tot[e[0]] += h; sum += h; }));
 
+  const photoCnt = orders.filter(o => !!o.photo).length;
+  const pendingPlans = plans.filter(p => !p.done).length;
+
   document.getElementById('cards').innerHTML = `
     <div class="card blue"><div class="num-big">${orders.length}</div><div class="lbl2">Всего заказов</div></div>
     <div class="card green"><div class="num-big">${orders.filter(o=>o.paid==='yes').length}</div><div class="lbl2">Оплачено</div></div>
     <div class="card red"><div class="num-big">${orders.filter(o=>o.accrued==='yes').length}</div><div class="lbl2">Начислено</div></div>
+    <div class="card orange"><div class="num-big">${pendingPlans}</div><div class="lbl2">Планов в работе</div></div>
+    <div class="card purple"><div class="num-big">${photoCnt}</div><div class="lbl2">С фото актов</div></div>
     <div class="card"><div class="num-big">${fmtNum(sum)} ч.</div><div class="lbl2">Сумма часов</div></div>
   `;
 
+  // Итоги по месяцам
+  const monthsData = {};
+  orders.forEach(o => {
+    const k = monthKey(o.date);
+    if(!monthsData[k]){
+      monthsData[k] = { count:0, hours:0, paid:0, accrued:0, photos:0 };
+    }
+    monthsData[k].count++;
+    let orderH = 0;
+    EMPLOYEES.forEach(e => { orderH += (parseFloat(o.hours[e[0]])||0); });
+    monthsData[k].hours += orderH;
+    if(o.paid === 'yes') monthsData[k].paid++;
+    if(o.accrued === 'yes') monthsData[k].accrued++;
+    if(o.photo) monthsData[k].photos++;
+  });
+
+  const monthKeys = Object.keys(monthsData).sort((a,b) => {
+    return monthSortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a);
+  });
+
+  let monthsHtml = '';
+  monthKeys.forEach(k => {
+    const md = monthsData[k];
+    monthsHtml += `<tr>
+      <td style="font-weight:600;color:var(--blue);text-align:left">${monthLabel(k)}</td>
+      <td>${md.count}</td>
+      <td style="font-weight:600">${fmtNum(md.hours)} ч.</td>
+      <td style="color:#3fb950">${md.paid}</td>
+      <td style="color:#ff7b72">${md.accrued}</td>
+      <td>${md.photos}</td>
+    </tr>`;
+  });
+
+  const sumMonthsBody = document.getElementById('sumMonthsBody');
+  if(sumMonthsBody){
+    sumMonthsBody.innerHTML = monthsHtml || '<tr><td colspan="6" style="color:var(--muted);padding:16px;">Нет данных по месяцам</td></tr>';
+  }
+  const lblMonthSort = document.getElementById('lblMonthSort');
+  if(lblMonthSort){
+    lblMonthSort.textContent = monthSortOrder === 'asc' ? 'По возрастанию ▲' : 'По убыванию ▼';
+  }
+
+  // Статистика по сотрудникам
   document.getElementById('sumBody').innerHTML = EMPLOYEES.map(e => {
     const share = sum>0 ? Math.round(tot[e[0]]/sum*100) : 0;
     return `<tr><td>${e[1]}</td><td>${fmtNum(tot[e[0]])}</td><td>${share}%</td></tr>`;
@@ -1087,7 +1135,7 @@ tbody.addEventListener('input', e => {
 tbody.addEventListener('change', e => {
   const el = e.target, id = el.dataset.id;
   const o = orders.find(x => x.id === id);
-  if(o && el.dataset.field === 'date'){ o.date = el.value; triggerSync(); renderOrders(); }
+  if(o && el.dataset.field === 'date'){ o.date = el.value; triggerSync(); renderOrders(); renderSummary(); }
 });
 
 tbody.addEventListener('click', e => {
@@ -1111,10 +1159,10 @@ tbody.addEventListener('click', e => {
     const copy = JSON.parse(JSON.stringify(o));
     copy.id = uid(); copy.seq = seq++;
     orders.splice(orders.indexOf(o)+1, 0, copy);
-    triggerSync(); renderOrders();
+    triggerSync(); renderOrders(); renderSummary();
   }
   else if(act === 'del'){
-    if(confirm('Удалить заказ?')){ orders = orders.filter(x => x.id !== id); triggerSync(); renderOrders(); }
+    if(confirm('Удалить заказ?')){ orders = orders.filter(x => x.id !== id); triggerSync(); renderOrders(); renderSummary(); }
   }
 });
 
@@ -1122,6 +1170,14 @@ document.getElementById('thSortDate').addEventListener('click', () => {
   dateSortOrder = dateSortOrder === 'asc' ? 'desc' : 'asc';
   renderOrders();
 });
+
+const btnToggleMonthSort = document.getElementById('btnToggleMonthSort');
+if(btnToggleMonthSort){
+  btnToggleMonthSort.addEventListener('click', () => {
+    monthSortOrder = monthSortOrder === 'desc' ? 'asc' : 'desc';
+    renderSummary();
+  });
+}
 
 /* Календарь навигация */
 document.getElementById('smPrev6').addEventListener('click', () => { calBaseDate.setMonth(calBaseDate.getMonth() - 6); renderSixMonthCalendar(); });
@@ -1178,11 +1234,11 @@ tbodyPlans.addEventListener('click', e => {
 /* Кнопки панели */
 document.getElementById('btnAdd').addEventListener('click', () => {
   orders.push({id:uid(), seq:seq++, date:todayISO(), num:'', client:'Клиент', hours:emptyHours(), paid:'no', accrued:'no', photo:null});
-  triggerSync(); renderOrders();
+  triggerSync(); renderOrders(); renderSummary();
   window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'});
 });
 document.getElementById('btnClear').addEventListener('click', () => {
-  if(orders.length && confirm('Удалить ВСЕ заказы?')){ orders=[]; seq=0; triggerSync(); renderOrders(); }
+  if(orders.length && confirm('Удалить ВСЕ заказы?')){ orders=[]; seq=0; triggerSync(); renderOrders(); renderSummary(); }
 });
 document.getElementById('btnAddPlan').addEventListener('click', () => {
   plans.push({ id:uid(), date: calSelectedDate || todayISO(), task:'', comment:'', emp:'', priority:'normal', done:false });
@@ -1230,7 +1286,7 @@ document.getElementById('fileInput').addEventListener('change', e => {
       const o = orders.find(x => x.id === photoTargetId);
       if(o){
         o.photo = c.toDataURL('image/jpeg', 0.60);
-        triggerSync(); renderOrders();
+        triggerSync(); renderOrders(); renderSummary();
       }
     };
     img.src = ev.target.result;
