@@ -14,6 +14,9 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
+<!-- Tesseract.js для оптического распознавания текста актов (OCR) прямо в браузере -->
+<script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
 <style>
   :root{
     --bg:#0d1117; --panel:#161b22; --panel2:#21262d; --border:#30363d;
@@ -167,26 +170,28 @@
   }
   .btn-reset:hover { color: var(--text); border-color: var(--muted); }
 
-  /* Таблицы */
+  /* Таблицы с жестко зафиксированной шапкой */
   .table-wrap {
     width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
     border: 1px solid var(--border); border-radius: 6px; background: var(--bg);
     margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    max-height: 78vh; /* Позволяет скроллить таблицу с фиксацией заголовка */
   }
-  table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1300px; }
+  thead { position: sticky; top: 0; z-index: 25; }
   thead th {
-    position: sticky; background: var(--panel); color: var(--muted);
+    position: sticky; background: #161b22 !important; color: var(--muted);
     font-size: 13px; font-weight: 600; padding: 9px 8px;
-    border: 1px solid var(--border); z-index: 10;
+    border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
   }
-  tr.head1 th { top: 0; height: 40px; z-index: 11; color: var(--text); }
-  tr.head2 th { top: 40px; z-index: 10; }
+  tr.head1 th { top: 0; height: 40px; z-index: 27; color: var(--text); }
+  tr.head2 th { top: 40px; z-index: 26; }
   th.sortable { cursor: pointer; user-select: none; }
-  th.sortable:hover { color: var(--blue); background: var(--panel2); }
-  tbody td { border: 1px solid var(--border); padding: 6px; background: var(--bg); font-size: 14px; vertical-align: middle; }
+  th.sortable:hover { color: var(--blue); background: var(--panel2) !important; }
+  tbody td { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 6px; background: var(--bg); font-size: 14px; vertical-align: middle; }
   
   tr.month td {
-    background: var(--panel); color: var(--blue); font-weight: 600; font-size: 14.5px;
+    background: #161b22; color: var(--blue); font-weight: 600; font-size: 14.5px;
     padding: 10px 14px; cursor: pointer; user-select: none; border-top: 2px solid var(--border);
   }
   tr.month:hover td { background: var(--panel2); }
@@ -199,39 +204,43 @@
     font-family: inherit;
   }
   input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(56,139,253,.25); }
-  input[type="date"] { width: 145px; }
-  input.num { width: 120px; }
-  input.hours { width: 75px; text-align: center; }
+  
+  input[type="date"] { width: 145px; cursor: pointer; }
+  input.num { width: 110px; }
+  input.hours { width: 70px; text-align: center; }
 
   .expandable-field { position: relative; display: flex; align-items: center; width: 100%; }
-  .client-field { min-width: 260px; }
-  .task-field { min-width: 300px; }
-  .comment-field { min-width: 280px; }
-  textarea.auto-expand { resize: none; overflow-y: hidden; min-height: 38px; line-height: 1.35; padding-right: 38px; }
+  .client-field { min-width: 220px; }
+  .comment-field-order { min-width: 220px; }
+  .task-field { min-width: 280px; }
+  .comment-field { min-width: 240px; }
   
-  .btn-expand-modal {
-    position: absolute;
-    right: 4px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(33, 38, 45, 0.85);
-    border: 1px solid var(--border);
-    color: var(--blue);
-    cursor: pointer;
-    font-size: 15px;
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 5;
-    touch-action: manipulation;
+  textarea.auto-expand { resize: none; overflow-y: hidden; min-height: 38px; line-height: 1.35; padding-right: 38px; }
+  .task-field textarea.auto-expand { padding-right: 74px; }
+  
+  .field-btns-group {
+    position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+    display: flex; align-items: center; gap: 3px; z-index: 5;
   }
-  .btn-expand-modal:hover, .btn-expand-modal:active {
-    background: var(--blue-btn);
-    color: #fff;
-    border-color: var(--blue);
+
+  .btn-field-icon {
+    background: rgba(33, 38, 45, 0.9); border: 1px solid var(--border); color: var(--blue);
+    cursor: pointer; font-size: 14px; width: 32px; height: 32px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; touch-action: manipulation;
+    transition: all 0.2s ease;
+  }
+  .btn-field-icon:hover, .btn-field-icon:active { background: var(--blue-btn); color: #fff; border-color: var(--blue); }
+
+  .btn-field-icon.recording {
+    background: rgba(248, 81, 73, 0.25) !important;
+    border-color: var(--red) !important;
+    color: var(--red) !important;
+    animation: micPulse 1.2s infinite ease-in-out;
+  }
+  @keyframes micPulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.7); }
+    50% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(248, 81, 73, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248, 81, 73, 0); }
   }
 
   .pill {
@@ -253,6 +262,20 @@
     min-height: 36px;
   }
   .mini:hover { color: var(--text); border-color: var(--muted); }
+  
+  /* Кнопка OCR сканирования в строке */
+  .btn-ocr {
+    background: rgba(88,166,255,0.15); border: 1px solid var(--blue); color: var(--blue);
+    padding: 6px 9px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; margin-top: 4px;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .btn-ocr:hover { background: var(--blue-btn); color: #fff; }
+  .btn-ocr.scanning {
+    background: rgba(240,136,62,0.2) !important; border-color: var(--orange) !important; color: var(--orange) !important;
+    cursor: wait; animation: pulseScan 1.2s infinite alternate;
+  }
+  @keyframes pulseScan { from { opacity: 0.6; } to { opacity: 1; } }
+
   .photo-cell { white-space: nowrap; text-align: center; }
   .thumb {
     width: 40px; height: 40px; object-fit: cover; border-radius: 6px;
@@ -265,8 +288,9 @@
   .act-btn:hover { color: var(--text); transform: scale(1.15); }
   tfoot td {
     position: sticky; bottom: 0; background: var(--panel2); color: var(--text);
-    font-weight: 700; font-size: 14px; text-align: center; padding: 12px 8px; border: 1px solid var(--border);
-    z-index: 9;
+    font-weight: 700; font-size: 14px; text-align: center; padding: 12px 8px;
+    border-right: 1px solid var(--border); border-top: 1px solid var(--border);
+    z-index: 15;
   }
   tfoot td.lbl { text-align: right; padding-right: 16px; font-size: 14.5px; }
 
@@ -287,9 +311,9 @@
     display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
   }
   .sumtable { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow-x: auto; margin-bottom: 18px; }
-  .sumtable table { min-width: 100%; }
-  .sumtable th { background: var(--panel2); font-size: 13px; }
-  .sumtable th, .sumtable td { padding: 9px 12px; border: 1px solid var(--border); font-size: 13.5px; text-align: center; }
+  .sumtable table { min-width: 100%; border-collapse: collapse; }
+  .sumtable th { background: var(--panel2) !important; font-size: 13px; }
+  .sumtable th, .sumtable td { padding: 9px 10px; border: 1px solid var(--border); font-size: 13.5px; text-align: center; }
   .hidden { display: none !important; }
 
   /* Стили планов */
@@ -307,7 +331,6 @@
   .btn-add   { background: var(--green);  border-color: var(--green); }
   .btn-html  { background: var(--purple); border-color: var(--purple); }
   .btn-excel { background: var(--green2); border-color: var(--green2); }
-  .btn-clear:hover { color: #ff7b72; border-color: var(--red); }
   .scroll-hint { display: none; font-size: 12px; color: var(--muted); text-align: right; margin-bottom: 6px; justify-content: flex-end; gap: 4px; }
 
   /* Календарь 3х3 см */
@@ -395,14 +418,26 @@
     padding: 12px 14px; font-size: 16px !important; line-height: 1.5; outline: none;
     resize: vertical; font-family: inherit;
   }
-  .text-modal-footer { display: flex; justify-content: flex-end; gap: 8px; }
+  .text-modal-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .modal-actions-right { display: flex; gap: 8px; }
   .btn-text-modal { padding: 8px 16px; border-radius: 6px; font-size: 13.5px; font-weight: 600; cursor: pointer; border: 1px solid transparent; }
   .btn-text-close { background: var(--panel2); border-color: var(--border); color: var(--text); }
   .btn-text-save { background: var(--green); color: #fff; border-color: var(--green2); }
+  .btn-text-mic { background: var(--panel2); border: 1px solid var(--border); color: var(--blue); display: inline-flex; align-items: center; gap: 6px; }
+  .btn-text-mic.recording { background: rgba(248,81,73,0.2) !important; border-color: var(--red) !important; color: var(--red) !important; }
 
   .table-loader-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 36px 20px; gap: 12px; color: var(--muted); }
   .table-loader-spinner { width: 28px; height: 28px; border: 3px solid rgba(88,166,255,0.2); border-top-color: var(--blue); border-radius: 50%; animation: spinLoader 0.8s linear infinite; }
   @keyframes spinLoader { to { transform: rotate(360deg); } }
+
+  /* Окно статуса распознавания OCR */
+  .ocr-banner {
+    position: fixed; bottom: 20px; right: 20px; z-index: 1000;
+    background: #161b22; border: 1px solid var(--blue); border-radius: 10px;
+    padding: 14px 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    display: none; align-items: center; gap: 12px; font-size: 13.5px; color: var(--text);
+  }
+  .ocr-banner.show { display: flex; animation: authFadeIn 0.2s ease; }
 
   /* Lightbox */
   .lightbox { position: fixed; inset: 0; background: rgba(1,4,9,.94); display: none; flex-direction: column; z-index: 100; }
@@ -420,6 +455,10 @@
     .toolbar .btn { width: 100%; }
     .six-month-grid { justify-content: space-between; }
     .sm-month-card { width: calc(33.33% - 6px); min-width: 95px; }
+    .client-field { min-width: 220px; }
+    .comment-field-order { min-width: 220px; }
+    .task-field { min-width: 260px; }
+    .comment-field { min-width: 240px; }
   }
   @media (max-width: 480px) {
     .toolbar { grid-template-columns: 1fr; }
@@ -452,10 +491,19 @@
     </div>
     <textarea class="text-modal-area" id="textModalArea" placeholder="Введите полный текст..."></textarea>
     <div class="text-modal-footer">
-      <button class="btn-text-modal btn-text-close" id="btnTextModalCancel">Отмена</button>
-      <button class="btn-text-modal btn-text-save" id="btnTextModalSave">Сохранить</button>
+      <button class="btn-text-modal btn-text-mic" id="btnModalVoice"><span class="mic-icon">🎙</span> <span id="lblModalVoice">Диктовать</span></button>
+      <div class="modal-actions-right">
+        <button class="btn-text-modal btn-text-close" id="btnTextModalCancel">Отмена</button>
+        <button class="btn-text-modal btn-text-save" id="btnTextModalSave">Сохранить</button>
+      </div>
     </div>
   </div>
+</div>
+
+<!-- Всплывающий баннер статуса OCR сканирования -->
+<div class="ocr-banner" id="ocrBanner">
+  <div class="table-loader-spinner" style="width:20px;height:20px;border-width:2px;"></div>
+  <span id="ocrStatusText">Идёт распознавание акта...</span>
 </div>
 
 <header class="navbar">
@@ -479,7 +527,7 @@
   </nav>
 
   <div class="banner">
-    <div>☁️ <strong>Единая онлайн-база</strong>: данные разбиты по месяцам и синхронизируются в реальном времени.</div>
+    <div>☁️ <strong>Единая онлайн-база</strong>: шапка таблицы зафиксирована, данные сохраняются автоматически.</div>
   </div>
 
   <div class="searchbar" id="searchbar">
@@ -498,11 +546,12 @@
           <tr class="head1">
             <th rowspan="2" class="sortable" id="thSortDate" title="Переключить сортировку">Дата <span id="sortDateIcon">▲</span></th>
             <th rowspan="2">№ заказа</th>
-            <th rowspan="2">Клиент (нажмите ⛶ для всего текста)</th>
+            <th rowspan="2">Клиент (нажмите ⛶)</th>
+            <th rowspan="2">Комментарии (нажмите ⛶)</th>
             <th colspan="6">Количество часов</th>
             <th rowspan="2">Хозяйство<br>оплатило</th>
             <th rowspan="2">Начислено</th>
-            <th rowspan="2">Фото акта</th>
+            <th rowspan="2">Фото и распознавание акта</th>
             <th rowspan="2">Действия</th>
           </tr>
           <tr class="head2" id="empHead"></tr>
@@ -510,7 +559,7 @@
         <tbody id="tbody"></tbody>
         <tfoot>
           <tr>
-            <td class="lbl" colspan="3" id="totLabel">Общий итог часов:</td>
+            <td class="lbl" colspan="4" id="totLabel">Общий итог часов:</td>
             <td id="tot-bragin">0</td><td id="tot-bystrov">0</td><td id="tot-veprev">0</td>
             <td id="tot-zuykov">0</td><td id="tot-kovrizhnykh">0</td><td id="tot-plyusnin">0</td>
             <td colspan="4" id="tot-sum">Всего: 0 ч.</td>
@@ -521,7 +570,6 @@
 
     <div class="toolbar">
       <button class="btn btn-add" id="btnAdd">+ Добавить заказ</button>
-      <button class="btn btn-clear" id="btnClear">🗑 Очистить всё</button>
       <span style="flex:1"></span>
       <button class="btn btn-html" id="btnHtml">⬇ Скачать отчет с фото (HTML)</button>
       <button class="btn btn-excel" id="btnExcel">📊 Скачать Excel (.xlsx)</button>
@@ -530,7 +578,6 @@
 
   <!-- Вкладка: Планы -->
   <div id="view-plans" class="hidden">
-    <!-- Компактный календарь 3x3 см -->
     <div class="six-month-container">
       <div class="sm-header">
         <div class="sm-title-group">
@@ -565,7 +612,7 @@
           <tr class="head1">
             <th style="width:46px">№</th>
             <th style="width:150px">Срок / Дата</th>
-            <th>Описание задачи / Плана (нажмите ⛶)</th>
+            <th>Описание задачи / Плана (🎙 Голос / ⛶ Текст)</th>
             <th>Комментарий / Заметка (нажмите ⛶)</th>
             <th style="width:160px">Ответственный</th>
             <th style="width:140px">Приоритет</th>
@@ -579,7 +626,6 @@
 
     <div class="toolbar">
       <button class="btn btn-add" id="btnAddPlan">+ Добавить план</button>
-      <button class="btn btn-clear" id="btnClearPlans">🗑 Очистить планы</button>
     </div>
   </div>
 
@@ -592,12 +638,23 @@
         <button class="btn-reset" id="btnToggleMonthSort" style="padding:4px 10px;font-size:12px;min-height:32px;">Сортировка: <span id="lblMonthSort">По убыванию ▼</span></button>
       </div>
       <div class="sumtable"><table>
-        <thead><tr><th>Месяц</th><th>Заказов</th><th>Сумма часов</th><th>Оплачено хоз-вом</th><th>Начислено</th><th>С актами</th></tr></thead>
+        <thead>
+          <tr class="head1">
+            <th rowspan="2">Месяц</th>
+            <th rowspan="2">Заказов</th>
+            <th rowspan="2">Всего часов</th>
+            <th colspan="6">Часы по сотрудникам</th>
+            <th rowspan="2">Оплачено хоз-вом</th>
+            <th rowspan="2">Начислено</th>
+            <th rowspan="2">С актами</th>
+          </tr>
+          <tr class="head2" id="empSummaryHead"></tr>
+        </thead>
         <tbody id="sumMonthsBody"></tbody>
       </table></div>
     </div>
     <div class="summary-section">
-      <div class="summary-title"><span>👷 Статистика по сотрудникам</span></div>
+      <div class="summary-title"><span>👷 Статистика по сотрудникам (общий итог)</span></div>
       <div class="sumtable"><table>
         <thead><tr><th>Сотрудник</th><th>Всего часов</th><th>Доля от всех часов</th></tr></thead>
         <tbody id="sumBody"></tbody>
@@ -684,12 +741,12 @@ function autoResize(el){
 }
 
 function seed(){
-  const mk = (date,num,h,paid,accrued) => ({
-    id:uid(), seq:seq++, date, num, client:'Клиент', hours:Object.assign(emptyHours(),h||{}), paid:paid||null, accrued:accrued||null, photo:null
+  const mk = (date,num,client,comment,h,paid,accrued) => ({
+    id:uid(), seq:seq++, date, num, client:client||'Клиент', comment:comment||'', hours:Object.assign(emptyHours(),h||{}), paid:paid||null, accrued:accrued||null, photo:null
   });
   orders = [
-    mk('2026-09-01','1',{bragin:1,kovrizhnykh:2},'no','no'),
-    mk('2026-10-01','2',{bystrov:2,zuykov:4,kovrizhnykh:5},'yes','no')
+    mk('2026-09-01','1','СПК Победа','Ремонт гидромотора',{bragin:1,kovrizhnykh:2},'no','no'),
+    mk('2026-10-01','2','ООO Родина','Замена РВД',{bystrov:2,zuykov:4,kovrizhnykh:5},'yes','no')
   ];
   plans = [
     { id:uid(), date:'2026-11-05', task:'Заказать комплект РВД и фильтрующие элементы', comment:'Срочно до пятницы', emp:'kovrizhnykh', priority:'urgent', done:false }
@@ -829,7 +886,7 @@ function renderOrders(){
     monthOrders.forEach(o => { EMPLOYEES.forEach(e => { monthHours += (parseFloat(o.hours[e[0]])||0); }); });
 
     html += `<tr class="month" data-act="toggle" data-month="${k}">
-      <td colspan="13">
+      <td colspan="14">
         <span class="arrow">${isCol ? '▸' : '▼'}</span> 
         <strong>${monthLabel(k)}</strong>
         <span class="month-badge">Заказов: ${monthOrders.length} | Часов: ${fmtNum(monthHours)} ч.</span>
@@ -841,20 +898,33 @@ function renderOrders(){
     for(let j=0; j<monthOrders.length; j++){
       const o = monthOrders[j];
       html += `<tr>
-        <td><input type="date" data-id="${o.id}" data-field="date" value="${esc(o.date)}"></td>
+        <td><input type="date" class="date-picker-input" data-id="${o.id}" data-field="date" value="${esc(o.date)}" title="Нажмите для открытия календаря"></td>
         <td><input type="text" class="num" placeholder="№" data-id="${o.id}" data-field="num" value="${esc(o.num)}"></td>
         <td>
           <div class="expandable-field client-field">
             <textarea class="auto-expand" placeholder="Клиент..." data-id="${o.id}" data-field="client" rows="1">${esc(o.client)}</textarea>
-            <button class="btn-expand-modal" title="Развернуть текст" data-act="openTextModal" data-type="order" data-id="${o.id}" data-field="client">⛶</button>
+            <div class="field-btns-group">
+              <button class="btn-field-icon" title="Развернуть текст" data-act="openTextModal" data-type="order" data-id="${o.id}" data-field="client">⛶</button>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div class="expandable-field comment-field-order">
+            <textarea class="auto-expand" placeholder="Комментарий к заказу..." data-id="${o.id}" data-field="comment" rows="1">${esc(o.comment||'')}</textarea>
+            <div class="field-btns-group">
+              <button class="btn-field-icon" title="Развернуть комментарий" data-act="openTextModal" data-type="order" data-id="${o.id}" data-field="comment">⛶</button>
+            </div>
           </div>
         </td>
         ${EMPLOYEES.map(e => `<td><input type="number" min="0" step="0.5" class="hours" data-id="${o.id}" data-field="hours" data-emp="${e[0]}" value="${o.hours[e[0]]||0}"></td>`).join('')}
         <td>${statusBtn(o,'paid')}</td>
         <td>${statusBtn(o,'accrued')}</td>
         <td class="photo-cell">
-          <button class="mini" data-act="photo" data-id="${o.id}">${o.photo?'Изм.':'+ Фото'}</button>
-          ${o.photo ? `<img class="thumb" data-act="view" data-id="${o.id}" src="${o.photo}" alt="фото" loading="lazy" decoding="async">` : ''}
+          <div style="display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;">
+            <button class="mini" data-act="photo" data-id="${o.id}">${o.photo?'Изм.':'+ Фото'}</button>
+            ${o.photo ? `<img class="thumb" data-act="view" data-id="${o.id}" src="${o.photo}" alt="фото" loading="lazy" decoding="async">` : ''}
+          </div>
+          ${o.photo ? `<button class="btn-ocr" data-act="ocr" data-id="${o.id}" title="Автоматически распознать текст акта и заполнить данные">📄 Распознать</button>` : ''}
         </td>
         <td style="white-space:nowrap;text-align:center">
           <button class="act-btn" title="Копировать" data-act="dup" data-id="${o.id}">＋</button>
@@ -865,8 +935,8 @@ function renderOrders(){
   }
 
   const emptyContent = !isCloudLoaded && orders.length === 0
-    ? '<tr><td colspan="13"><div class="table-loader-box"><div class="table-loader-spinner"></div><span>Загрузка данных из облака...</span></div></td></tr>'
-    : '<tr><td colspan="13" style="text-align:center;padding:32px;color:var(--muted)">Ничего не найдено</td></tr>';
+    ? '<tr><td colspan="14"><div class="table-loader-box"><div class="table-loader-spinner"></div><span>Загрузка данных из облака...</span></div></td></tr>'
+    : '<tr><td colspan="14" style="text-align:center;padding:32px;color:var(--muted)">Ничего не найдено</td></tr>';
   document.getElementById('tbody').innerHTML = html || emptyContent;
   document.querySelectorAll('#tbody textarea.auto-expand').forEach(autoResize);
 
@@ -979,17 +1049,22 @@ function renderPlans(){
     const i = item.originalIndex;
     html += `<tr class="${p.priority==='urgent'?'plan-row-urgent ':''}${p.done?'plan-row-done':''}">
       <td style="text-align:center">${i+1}</td>
-      <td><input type="date" data-plan-id="${p.id}" data-plan-field="date" value="${esc(p.date)}"></td>
+      <td><input type="date" class="date-picker-input" data-plan-id="${p.id}" data-plan-field="date" value="${esc(p.date)}" title="Нажмите для открытия календаря"></td>
       <td>
         <div class="expandable-field task-field">
           <textarea class="auto-expand" placeholder="Задача..." data-plan-id="${p.id}" data-plan-field="task" rows="1">${esc(p.task)}</textarea>
-          <button class="btn-expand-modal" title="Развернуть" data-act="openTextModal" data-type="plan" data-id="${p.id}" data-plan-id="${p.id}" data-field="task">⛶</button>
+          <div class="field-btns-group">
+            <button class="btn-field-icon" title="Диктовать голосом" data-act="voiceInput" data-plan-id="${p.id}">🎙</button>
+            <button class="btn-field-icon" title="Развернуть" data-act="openTextModal" data-type="plan" data-id="${p.id}" data-plan-id="${p.id}" data-field="task">⛶</button>
+          </div>
         </div>
       </td>
       <td>
         <div class="expandable-field comment-field">
           <textarea class="auto-expand" placeholder="Заметка..." data-plan-id="${p.id}" data-plan-field="comment" rows="1">${esc(p.comment||'')}</textarea>
-          <button class="btn-expand-modal" title="Развернуть" data-act="openTextModal" data-type="plan" data-id="${p.id}" data-plan-id="${p.id}" data-field="comment">⛶</button>
+          <div class="field-btns-group">
+            <button class="btn-field-icon" title="Развернуть" data-act="openTextModal" data-type="plan" data-id="${p.id}" data-plan-id="${p.id}" data-field="comment">⛶</button>
+          </div>
         </div>
       </td>
       <td><select data-plan-id="${p.id}" data-plan-field="emp"><option value="">(Не назначен)</option>${EMPLOYEES.map(e=>`<option value="${e[0]}" ${p.emp===e[0]?'selected':''}>${e[1]}</option>`).join('')}</select></td>
@@ -1020,16 +1095,20 @@ function renderSummary(){
     <div class="card"><div class="num-big">${fmtNum(sum)} ч.</div><div class="lbl2">Сумма часов</div></div>
   `;
 
-  // Итоги по месяцам
+  // Итоги по месяцам с детальной раскладкой по сотрудникам
   const monthsData = {};
   orders.forEach(o => {
     const k = monthKey(o.date);
     if(!monthsData[k]){
-      monthsData[k] = { count:0, hours:0, paid:0, accrued:0, photos:0 };
+      monthsData[k] = { count:0, hours:0, empHours: emptyHours(), paid:0, accrued:0, photos:0 };
     }
     monthsData[k].count++;
     let orderH = 0;
-    EMPLOYEES.forEach(e => { orderH += (parseFloat(o.hours[e[0]])||0); });
+    EMPLOYEES.forEach(e => {
+      const eh = (parseFloat(o.hours[e[0]])||0);
+      orderH += eh;
+      monthsData[k].empHours[e[0]] += eh;
+    });
     monthsData[k].hours += orderH;
     if(o.paid === 'yes') monthsData[k].paid++;
     if(o.accrued === 'yes') monthsData[k].accrued++;
@@ -1046,7 +1125,8 @@ function renderSummary(){
     monthsHtml += `<tr>
       <td style="font-weight:600;color:var(--blue);text-align:left">${monthLabel(k)}</td>
       <td>${md.count}</td>
-      <td style="font-weight:600">${fmtNum(md.hours)} ч.</td>
+      <td style="font-weight:700;color:#fff;">${fmtNum(md.hours)} ч.</td>
+      ${EMPLOYEES.map(e => `<td>${fmtNum(md.empHours[e[0]])}</td>`).join('')}
       <td style="color:#3fb950">${md.paid}</td>
       <td style="color:#ff7b72">${md.accrued}</td>
       <td>${md.photos}</td>
@@ -1055,14 +1135,13 @@ function renderSummary(){
 
   const sumMonthsBody = document.getElementById('sumMonthsBody');
   if(sumMonthsBody){
-    sumMonthsBody.innerHTML = monthsHtml || '<tr><td colspan="6" style="color:var(--muted);padding:16px;">Нет данных по месяцам</td></tr>';
+    sumMonthsBody.innerHTML = monthsHtml || '<tr><td colspan="12" style="color:var(--muted);padding:16px;">Нет данных по месяцам</td></tr>';
   }
   const lblMonthSort = document.getElementById('lblMonthSort');
   if(lblMonthSort){
     lblMonthSort.textContent = monthSortOrder === 'asc' ? 'По возрастанию ▲' : 'По убыванию ▼';
   }
 
-  // Статистика по сотрудникам
   document.getElementById('sumBody').innerHTML = EMPLOYEES.map(e => {
     const share = sum>0 ? Math.round(tot[e[0]]/sum*100) : 0;
     return `<tr><td>${e[1]}</td><td>${fmtNum(tot[e[0]])}</td><td>${share}%</td></tr>`;
@@ -1075,21 +1154,180 @@ function renderAll(){
   renderSummary();
 }
 
+/* =========================================================
+   ОПТИЧЕСКОЕ РАСПОЗНАВАНИЕ ТЕКСТА АКТА (OCR)
+   ========================================================= */
+async function recognizeActPhoto(orderId, btnEl) {
+  const o = orders.find(x => x.id === orderId);
+  if (!o || !o.photo) {
+    alert('Сначала прикрепите фото акта к заказу.');
+    return;
+  }
+
+  if (typeof Tesseract === 'undefined') {
+    alert('Модуль оптического распознавания загружается, повторите попытку через пару секунд.');
+    return;
+  }
+
+  const banner = document.getElementById('ocrBanner');
+  const bannerText = document.getElementById('ocrStatusText');
+  if (banner) {
+    banner.classList.add('show');
+    bannerText.textContent = 'Распознавание текста акта...';
+  }
+  if (btnEl) btnEl.classList.add('scanning');
+
+  try {
+    const result = await Tesseract.recognize(o.photo, 'rus+eng', {
+      logger: m => {
+        if (m.status === 'recognizing text' && bannerText) {
+          bannerText.textContent = `Распознавание: ${Math.round(m.progress * 100)}%`;
+        }
+      }
+    });
+
+    const text = result.data.text || '';
+    if (!text.trim()) {
+      alert('Не удалось различить печатный текст на фото. Убедитесь, что фото четкое.');
+      return;
+    }
+
+    let foundDate = null;
+    let foundNum = null;
+    let foundClient = null;
+    let foundHours = null;
+
+    // 1. Поиск даты (ДД.ММ.ГГГГ или ДД/ММ/ГГГГ)
+    const dateMatch = text.match(/(\d{2})[./-](\d{2})[./-](20\d{2})/);
+    if (dateMatch) {
+      foundDate = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+    }
+
+    // 2. Поиск номера заказа или акта
+    const numMatch = text.match(/(?:заказ|акт|№|n°|no\.?)\s*([0-9A-ZА-Я\-_/]+)/i);
+    if (numMatch && numMatch[1]) {
+      foundNum = numMatch[1].replace(/[^0-9A-Za-zА-Яа-я\-_/]/g, '').trim();
+    }
+
+    // 3. Поиск названия хозяйства / заказчика / клиента
+    const clientMatch = text.match(/(?:заказчик|клиент|хозяйство|спк|ооо|зао|кфх|пао)\s*[:\-\s]?\s*([«"А-Яа-яA-Za-z0-9\s\-]+)/i);
+    if (clientMatch && clientMatch[1]) {
+      foundClient = clientMatch[1].split('\n')[0].replace(/[«»"]/g, '').trim();
+    }
+
+    // 4. Поиск количества часов
+    const hoursMatch = text.match(/(\d+(?:[.,]\d+)?)\s*(?:час|ч\b|ч\.)/i);
+    if (hoursMatch && hoursMatch[1]) {
+      foundHours = parseFloat(hoursMatch[1].replace(',', '.'));
+    }
+
+    // Заполнение полей заказа, если они пусты
+    let changes = [];
+    if (foundDate && !o.date) { o.date = foundDate; changes.push(`Дата: ${fmtDate(foundDate)}`); }
+    if (foundNum && !o.num) { o.num = foundNum; changes.push(`№ заказа: ${foundNum}`); }
+    if (foundClient && (!o.client || o.client === 'Клиент')) { o.client = foundClient; changes.push(`Клиент: ${foundClient}`); }
+
+    // Если найдены часы и в заказе они еще не разнесены, заносим в комментарий или первому сотруднику
+    if (foundHours && !isNaN(foundHours)) {
+      changes.push(`Часов по акту: ${foundHours}`);
+    }
+
+    // Автоматическое сохранение распознанного сырого текста в комментарий заказа
+    const previewText = text.replace(/\s+/g, ' ').trim().slice(0, 180);
+    if (!o.comment) {
+      o.comment = `OCR: ${previewText}`;
+    }
+
+    renderOrders();
+    triggerSync();
+
+    const reportMsg = changes.length 
+      ? `Успешно распознано и внесено:\n• ${changes.join('\n• ')}`
+      : `Текст с акта прочитан:\n"${previewText}..."\nДанные внесены в комментарий к заказу.`;
+
+    alert(reportMsg);
+  } catch (err) {
+    console.error('OCR Error:', err);
+    alert('Ошибка при распознавании изображения: ' + err.message);
+  } finally {
+    if (banner) banner.classList.remove('show');
+    if (btnEl) btnEl.classList.remove('scanning');
+  }
+}
+
+/* =========================================================
+   ГОЛОСОВОЙ ВВОД (РАСПОЗНАВАНИЕ РЕЧИ)
+   ========================================================= */
+let speechRecognition = null;
+let activeVoiceBtn = null;
+
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  speechRecognition = new SpeechRec();
+  speechRecognition.continuous = false;
+  speechRecognition.interimResults = false;
+  speechRecognition.lang = 'ru-RU';
+}
+
+function startVoiceRecognition(onResultCallback, buttonEl) {
+  if (!speechRecognition) {
+    alert('Ваш браузер не поддерживает голосовой ввод. Рекомендуется использовать Chrome или Яндекс.');
+    return;
+  }
+  if (activeVoiceBtn) {
+    try { speechRecognition.stop(); } catch(e){}
+    activeVoiceBtn.classList.remove('recording');
+    activeVoiceBtn = null;
+    return;
+  }
+
+  activeVoiceBtn = buttonEl;
+  if(buttonEl) buttonEl.classList.add('recording');
+
+  speechRecognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    if (transcript && onResultCallback) onResultCallback(transcript);
+  };
+  speechRecognition.onerror = (event) => {
+    console.warn('Speech error:', event.error);
+    if(event.error === 'not-allowed') alert('Разрешите доступ к микрофону в настройках браузера.');
+  };
+  speechRecognition.onend = () => {
+    if (activeVoiceBtn) {
+      activeVoiceBtn.classList.remove('recording');
+      activeVoiceBtn = null;
+    }
+    const lbl = document.getElementById('lblModalVoice');
+    if(lbl) lbl.textContent = 'Диктовать';
+  };
+
+  try {
+    speechRecognition.start();
+  } catch(e) {
+    if(buttonEl) buttonEl.classList.remove('recording');
+    activeVoiceBtn = null;
+  }
+}
+
 /* Модальное окно полного текста */
 function openTextModal(type, id, field){
   textModalTarget = { type, id, field };
   const modal = document.getElementById('textModalOverlay');
   const title = document.getElementById('textModalTitle');
   const area = document.getElementById('textModalArea');
+  const micBtn = document.getElementById('btnModalVoice');
+
   let currentVal = '';
   if(type === 'order'){
     const o = orders.find(x => x.id === id);
     if(o) currentVal = o[field] || '';
-    title.textContent = `Клиент (Заказ №${o?o.num:'—'})`;
+    title.textContent = field === 'client' ? `Клиент (Заказ №${o?o.num:'—'})` : `Комментарий к заказу №${o?o.num:'—'}`;
+    if(micBtn) micBtn.style.display = 'none';
   } else {
     const p = plans.find(x => x.id === id);
     if(p) currentVal = p[field] || '';
-    title.textContent = field === 'task' ? 'Описание задачи' : 'Комментарий';
+    title.textContent = field === 'task' ? 'Описание задачи' : 'Комментарий к задаче';
+    if(micBtn) micBtn.style.display = 'inline-flex';
   }
   area.value = currentVal;
   modal.classList.add('open');
@@ -1098,6 +1336,9 @@ function openTextModal(type, id, field){
 
 function closeTextModal(){
   document.getElementById('textModalOverlay').classList.remove('open');
+  if(speechRecognition && activeVoiceBtn) {
+    try { speechRecognition.stop(); } catch(e){}
+  }
   textModalTarget = null;
 }
 
@@ -1120,6 +1361,25 @@ document.getElementById('btnTextModalSave').addEventListener('click', () => {
   closeTextModal();
 });
 
+document.getElementById('btnModalVoice').addEventListener('click', (e) => {
+  const area = document.getElementById('textModalArea');
+  const btn = e.currentTarget;
+  const lbl = document.getElementById('lblModalVoice');
+
+  if(btn.classList.contains('recording')) {
+    try { speechRecognition.stop(); } catch(err){}
+    btn.classList.remove('recording');
+    if(lbl) lbl.textContent = 'Диктовать';
+    return;
+  }
+
+  if(lbl) lbl.textContent = 'Слушаю...';
+  startVoiceRecognition((text) => {
+    const prev = area.value.trim();
+    area.value = prev ? (prev + ' ' + text) : text;
+  }, btn);
+});
+
 /* Таблица заказов */
 const tbody = document.getElementById('tbody');
 tbody.addEventListener('input', e => {
@@ -1128,14 +1388,22 @@ tbody.addEventListener('input', e => {
   if(!o) return;
   if(el.dataset.field === 'hours'){ o.hours[el.dataset.emp] = parseFloat(el.value)||0; updateTotals(orders); renderSummary(); }
   else if(el.dataset.field === 'num'){ o.num = el.value; }
-  else if(el.dataset.field === 'client'){ o.client = el.value; autoResize(el); }
+  else if(el.dataset.field === 'client' || el.dataset.field === 'comment'){ o[el.dataset.field] = el.value; autoResize(el); }
   triggerSync();
 });
 
 tbody.addEventListener('change', e => {
   const el = e.target, id = el.dataset.id;
   const o = orders.find(x => x.id === id);
-  if(o && el.dataset.field === 'date'){ o.date = el.value; triggerSync(); renderOrders(); renderSummary(); }
+  if(o && el.dataset.field === 'date'){ o.date = el.value; triggerSync(); renderOrders(); }
+});
+
+tbody.addEventListener('click', e => {
+  if(e.target && e.target.classList.contains('date-picker-input')){
+    if(typeof e.target.showPicker === 'function'){
+      try { e.target.showPicker(); } catch(err){}
+    }
+  }
 });
 
 tbody.addEventListener('click', e => {
@@ -1147,11 +1415,25 @@ tbody.addEventListener('click', e => {
 
   const o = orders.find(x => x.id === id);
   if(!o) return;
+
+  // Запуск оптического распознавания текста акта
+  if(act === 'ocr'){
+    recognizeActPhoto(id, el);
+    return;
+  }
+
   if(act === 'status'){
-    o[el.dataset.field] = o[el.dataset.field]==='yes'?'no':'yes';
-    el.className = `pill ${o[el.dataset.field]==='yes'?'yes':'no'}`;
-    el.textContent = o[el.dataset.field]==='yes'?'Да':'Нет';
-    triggerSync(); renderSummary();
+    const fieldName = el.dataset.field === 'paid' ? 'Хозяйство оплатило' : 'Начислено';
+    const currentVal = o[el.dataset.field] === 'yes' ? 'Да' : 'Нет';
+    const nextVal = o[el.dataset.field] === 'yes' ? 'Нет' : 'Да';
+
+    if(confirm(`Изменить статус «${fieldName}» с «${currentVal}» на «${nextVal}»?`)){
+      o[el.dataset.field] = o[el.dataset.field]==='yes'?'no':'yes';
+      el.className = `pill ${o[el.dataset.field]==='yes'?'yes':'no'}`;
+      el.textContent = o[el.dataset.field]==='yes'?'Да':'Нет';
+      triggerSync();
+      renderSummary();
+    }
   }
   else if(act === 'photo'){ photoTargetId = id; document.getElementById('fileInput').click(); }
   else if(act === 'view'){ document.getElementById('lbImg').src = o.photo; document.getElementById('lightbox').classList.add('open'); }
@@ -1159,10 +1441,10 @@ tbody.addEventListener('click', e => {
     const copy = JSON.parse(JSON.stringify(o));
     copy.id = uid(); copy.seq = seq++;
     orders.splice(orders.indexOf(o)+1, 0, copy);
-    triggerSync(); renderOrders(); renderSummary();
+    triggerSync(); renderOrders();
   }
   else if(act === 'del'){
-    if(confirm('Удалить заказ?')){ orders = orders.filter(x => x.id !== id); triggerSync(); renderOrders(); renderSummary(); }
+    if(confirm('Удалить заказ?')){ orders = orders.filter(x => x.id !== id); triggerSync(); renderOrders(); }
   }
 });
 
@@ -1217,15 +1499,53 @@ tbodyPlans.addEventListener('change', e => {
 });
 
 tbodyPlans.addEventListener('click', e => {
+  if(e.target && e.target.classList.contains('date-picker-input')){
+    if(typeof e.target.showPicker === 'function'){
+      try { e.target.showPicker(); } catch(err){}
+    }
+  }
+});
+
+tbodyPlans.addEventListener('click', e => {
   const btn = e.target.closest('[data-act]');
   if(!btn) return;
   const act = btn.dataset.act;
   const id = btn.dataset.planId || btn.dataset.id;
-  if(act === 'openTextModal'){ openTextModal(btn.dataset.type, id, btn.dataset.field); return; }
   const p = plans.find(x => x.id === id);
+
+  if(act === 'voiceInput') {
+    startVoiceRecognition((text) => {
+      if(p) {
+        const prev = (p.task || '').trim();
+        p.task = prev ? (prev + ' ' + text) : text;
+        renderPlans();
+        triggerSync();
+      }
+    }, btn);
+    return;
+  }
+
+  if(act === 'openTextModal'){ openTextModal(btn.dataset.type, id, btn.dataset.field); return; }
   if(!p) return;
-  if(act === 'togglePriority'){ p.priority = p.priority==='urgent'?'normal':'urgent'; triggerSync(); renderPlans(); }
-  else if(act === 'toggleDone'){ p.done = !p.done; triggerSync(); renderPlans(); }
+  
+  if(act === 'togglePriority'){
+    const currentP = p.priority === 'urgent' ? 'Важное' : 'Обычное';
+    const nextP = p.priority === 'urgent' ? 'Обычное' : 'Важное';
+    if(confirm(`Изменить приоритет задачи с «${currentP}» на «${nextP}»?`)){
+      p.priority = p.priority==='urgent'?'normal':'urgent';
+      triggerSync();
+      renderPlans();
+    }
+  }
+  else if(act === 'toggleDone'){
+    const currentD = p.done ? 'Выполнено' : 'В работе';
+    const nextD = p.done ? 'В работе' : 'Выполнено';
+    if(confirm(`Изменить статус выполнения с «${currentD}» на «${nextD}»?`)){
+      p.done = !p.done;
+      triggerSync();
+      renderPlans();
+    }
+  }
   else if(act === 'delPlan'){
     if(confirm('Удалить задачу?')){ plans = plans.filter(x => x.id !== id); triggerSync(); renderPlans(); }
   }
@@ -1233,19 +1553,14 @@ tbodyPlans.addEventListener('click', e => {
 
 /* Кнопки панели */
 document.getElementById('btnAdd').addEventListener('click', () => {
-  orders.push({id:uid(), seq:seq++, date:todayISO(), num:'', client:'Клиент', hours:emptyHours(), paid:'no', accrued:'no', photo:null});
-  triggerSync(); renderOrders(); renderSummary();
+  orders.push({id:uid(), seq:seq++, date:todayISO(), num:'', client:'Клиент', comment:'', hours:emptyHours(), paid:'no', accrued:'no', photo:null});
+  triggerSync(); renderOrders();
   window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'});
 });
-document.getElementById('btnClear').addEventListener('click', () => {
-  if(orders.length && confirm('Удалить ВСЕ заказы?')){ orders=[]; seq=0; triggerSync(); renderOrders(); renderSummary(); }
-});
+
 document.getElementById('btnAddPlan').addEventListener('click', () => {
   plans.push({ id:uid(), date: calSelectedDate || todayISO(), task:'', comment:'', emp:'', priority:'normal', done:false });
   triggerSync(); renderPlans();
-});
-document.getElementById('btnClearPlans').addEventListener('click', () => {
-  if(plans.length && confirm('Очистить все планы?')){ plans=[]; triggerSync(); renderPlans(); }
 });
 
 /* Поиск */
@@ -1268,7 +1583,7 @@ document.querySelectorAll('.tab').forEach(t => {
   });
 });
 
-/* Загрузка фото */
+/* Загрузка фото с авто-распознаванием */
 document.getElementById('fileInput').addEventListener('change', e => {
   const file = e.target.files[0];
   e.target.value = '';
@@ -1277,16 +1592,21 @@ document.getElementById('fileInput').addEventListener('change', e => {
   reader.onload = ev => {
     const img = new Image();
     img.onload = () => {
-      const max = 750;
+      const max = 1200; // Достаточно четкое для OCR распознавания
       let w = img.width, h = img.height;
       if(w > max || h > max){ const k = max / Math.max(w, h); w = Math.round(w * k); h = Math.round(h * k); }
       const c = document.createElement('canvas'); c.width = w; c.height = h;
-      const ctx = c.getContext('2d', { alpha: false });
-      ctx.drawImage(img, 0, 0, w, h);
+      c.getContext('2d', { alpha: false }).drawImage(img, 0, 0, w, h);
       const o = orders.find(x => x.id === photoTargetId);
       if(o){
-        o.photo = c.toDataURL('image/jpeg', 0.60);
-        triggerSync(); renderOrders(); renderSummary();
+        o.photo = c.toDataURL('image/jpeg', 0.70);
+        triggerSync();
+        renderOrders();
+        
+        // Предложение распознать текст сразу после загрузки фото
+        if(confirm('Фото акта загружено. Хотите автоматически распознать номер, дату и клиента из акта?')) {
+          recognizeActPhoto(photoTargetId);
+        }
       }
     };
     img.src = ev.target.result;
@@ -1311,6 +1631,7 @@ if (btnHtml) {
           <td>${fmtDate(o.date)}</td>
           <td>${esc(o.num)}</td>
           <td>${esc(o.client)}</td>
+          <td>${esc(o.comment||'—')}</td>
           ${EMPLOYEES.map(e => `<td>${o.hours[e[0]]||0}</td>`).join('')}
           <td>${st(o.paid)}</td>
           <td>${st(o.accrued)}</td>
@@ -1359,7 +1680,7 @@ if (btnHtml) {
       <h1>Отчет — «Гидравлика Сервис»</h1>
       <p style="text-align:center;color:#8b949e">Сформирован: ${new Date().toLocaleString('ru-RU')}</p>
       <h2>Заказы</h2>
-      <table><thead><tr><th>Дата</th><th>№ заказа</th><th>Клиент</th>${EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('')}<th>Оплачено</th><th>Начислено</th><th>Фото</th></tr></thead><tbody>${trs||'<tr><td colspan="12">Нет заказов</td></tr>'}</tbody></table>
+      <table><thead><tr><th>Дата</th><th>№ заказа</th><th>Клиент</th><th>Комментарии</th>${EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('')}<th>Оплачено</th><th>Начислено</th><th>Фото</th></tr></thead><tbody>${trs||'<tr><td colspan="13">Нет заказов</td></tr>'}</tbody></table>
       <h2>Планы и задачи</h2>
       <table><thead><tr><th>№</th><th>Дата</th><th>Задача</th><th>Комментарий</th><th>Ответственный</th><th>Приоритет</th><th>Статус</th></tr></thead><tbody>${planTrs||'<tr><td colspan="7">Нет планов</td></tr>'}</tbody></table>
       <h2>Фото актов</h2>${photos||'<p style="text-align:center;color:#8b949e">Фото не приложены.</p>'}
@@ -1388,7 +1709,7 @@ function downloadExcelDirectly() {
     <table border="1">
       <thead>
         <tr style="background:#ddd;">
-          <th>Дата</th><th>№ заказа</th><th>Клиент</th>
+          <th>Дата</th><th>№ заказа</th><th>Клиент</th><th>Комментарии</th>
           ${EMPLOYEES.map(e => '<th>' + e[1] + '</th>').join('')}
           <th>Хозяйство оплатило</th><th>Начислено</th>
         </tr>
@@ -1398,6 +1719,7 @@ function downloadExcelDirectly() {
           <td>${fmtDate(o.date)}</td>
           <td>${esc(o.num)}</td>
           <td>${esc(o.client)}</td>
+          <td>${esc(o.comment||'')}</td>
           ${EMPLOYEES.map(e => `<td>${o.hours[e[0]]||0}</td>`).join('')}
           <td>${st(o.paid)}</td>
           <td>${st(o.accrued)}</td>
@@ -1540,6 +1862,7 @@ document.getElementById('btnLock').addEventListener('click', () => {
 
 /* Запуск приложения */
 document.getElementById('empHead').innerHTML = EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('');
+document.getElementById('empSummaryHead').innerHTML = EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('');
 checkAuth();
 loadCachedData();
 startCloudListener();
