@@ -14,7 +14,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-<!-- Tesseract.js для оптического распознавания текста актов (OCR) прямо в браузере -->
+<!-- Tesseract.js для OCR-распознавания текста актов -->
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
@@ -170,14 +170,14 @@
   }
   .btn-reset:hover { color: var(--text); border-color: var(--muted); }
 
-  /* Таблицы с жестко зафиксированной шапкой */
+  /* Таблицы с фиксированной шапкой */
   .table-wrap {
     width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
     border: 1px solid var(--border); border-radius: 6px; background: var(--bg);
     margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.2);
-    max-height: 78vh; /* Позволяет скроллить таблицу с фиксацией заголовка */
+    max-height: 78vh;
   }
-  table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1300px; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1380px; }
   thead { position: sticky; top: 0; z-index: 25; }
   thead th {
     position: sticky; background: #161b22 !important; color: var(--muted);
@@ -210,13 +210,13 @@
   input.hours { width: 70px; text-align: center; }
 
   .expandable-field { position: relative; display: flex; align-items: center; width: 100%; }
-  .client-field { min-width: 220px; }
-  .comment-field-order { min-width: 220px; }
+  .client-field { min-width: 240px; }
+  .comment-field-order { min-width: 240px; }
+  .farm-field { min-width: 240px; }
   .task-field { min-width: 280px; }
   .comment-field { min-width: 240px; }
   
-  textarea.auto-expand { resize: none; overflow-y: hidden; min-height: 38px; line-height: 1.35; padding-right: 38px; }
-  .task-field textarea.auto-expand { padding-right: 74px; }
+  textarea.auto-expand { resize: none; overflow-y: hidden; min-height: 38px; line-height: 1.35; padding-right: 74px; }
   
   .field-btns-group {
     position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
@@ -263,7 +263,6 @@
   }
   .mini:hover { color: var(--text); border-color: var(--muted); }
   
-  /* Кнопка OCR сканирования в строке */
   .btn-ocr {
     background: rgba(88,166,255,0.15); border: 1px solid var(--blue); color: var(--blue);
     padding: 6px 9px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; margin-top: 4px;
@@ -430,7 +429,7 @@
   .table-loader-spinner { width: 28px; height: 28px; border: 3px solid rgba(88,166,255,0.2); border-top-color: var(--blue); border-radius: 50%; animation: spinLoader 0.8s linear infinite; }
   @keyframes spinLoader { to { transform: rotate(360deg); } }
 
-  /* Окно статуса распознавания OCR */
+  /* Окно статуса OCR */
   .ocr-banner {
     position: fixed; bottom: 20px; right: 20px; z-index: 1000;
     background: #161b22; border: 1px solid var(--blue); border-radius: 10px;
@@ -457,6 +456,7 @@
     .sm-month-card { width: calc(33.33% - 6px); min-width: 95px; }
     .client-field { min-width: 220px; }
     .comment-field-order { min-width: 220px; }
+    .farm-field { min-width: 220px; }
     .task-field { min-width: 260px; }
     .comment-field { min-width: 240px; }
   }
@@ -500,10 +500,10 @@
   </div>
 </div>
 
-<!-- Всплывающий баннер статуса OCR сканирования -->
+<!-- Всплывающий статус OCR -->
 <div class="ocr-banner" id="ocrBanner">
   <div class="table-loader-spinner" style="width:20px;height:20px;border-width:2px;"></div>
-  <span id="ocrStatusText">Идёт распознавание акта...</span>
+  <span id="ocrStatusText">Идёт распознавание рукописного акта...</span>
 </div>
 
 <header class="navbar">
@@ -546,8 +546,8 @@
           <tr class="head1">
             <th rowspan="2" class="sortable" id="thSortDate" title="Переключить сортировку">Дата <span id="sortDateIcon">▲</span></th>
             <th rowspan="2">№ заказа</th>
-            <th rowspan="2">Клиент (нажмите ⛶)</th>
-            <th rowspan="2">Комментарии (нажмите ⛶)</th>
+            <th rowspan="2">Клиент (🎙/⛶)</th>
+            <th rowspan="2">Комментарии (🎙/⛶)</th>
             <th colspan="6">Количество часов</th>
             <th rowspan="2">Хозяйство<br>оплатило</th>
             <th rowspan="2">Начислено</th>
@@ -612,8 +612,9 @@
           <tr class="head1">
             <th style="width:46px">№</th>
             <th style="width:150px">Срок / Дата</th>
-            <th>Описание задачи / Плана (🎙 Голос / ⛶ Текст)</th>
-            <th>Комментарий / Заметка (нажмите ⛶)</th>
+            <th>Название хозяйства (🎙/⛶)</th>
+            <th>Описание задачи / Плана (🎙/⛶)</th>
+            <th>Комментарий / Заметка (🎙/⛶)</th>
             <th style="width:160px">Ответственный</th>
             <th style="width:140px">Приоритет</th>
             <th style="width:140px">Выполнение</th>
@@ -749,7 +750,7 @@ function seed(){
     mk('2026-10-01','2','ООO Родина','Замена РВД',{bystrov:2,zuykov:4,kovrizhnykh:5},'yes','no')
   ];
   plans = [
-    { id:uid(), date:'2026-11-05', task:'Заказать комплект РВД и фильтрующие элементы', comment:'Срочно до пятницы', emp:'kovrizhnykh', priority:'urgent', done:false }
+    { id:uid(), date:'2026-11-05', farm:'СПК Победа', task:'Заказать комплект РВД и фильтрующие элементы', comment:'Срочно до пятницы', emp:'kovrizhnykh', priority:'urgent', done:false }
   ];
 }
 
@@ -904,6 +905,7 @@ function renderOrders(){
           <div class="expandable-field client-field">
             <textarea class="auto-expand" placeholder="Клиент..." data-id="${o.id}" data-field="client" rows="1">${esc(o.client)}</textarea>
             <div class="field-btns-group">
+              <button class="btn-field-icon" title="Диктовать голосом" data-act="voiceInputTable" data-target="order" data-id="${o.id}" data-field="client">🎙</button>
               <button class="btn-field-icon" title="Развернуть текст" data-act="openTextModal" data-type="order" data-id="${o.id}" data-field="client">⛶</button>
             </div>
           </div>
@@ -912,6 +914,7 @@ function renderOrders(){
           <div class="expandable-field comment-field-order">
             <textarea class="auto-expand" placeholder="Комментарий к заказу..." data-id="${o.id}" data-field="comment" rows="1">${esc(o.comment||'')}</textarea>
             <div class="field-btns-group">
+              <button class="btn-field-icon" title="Диктовать голосом" data-act="voiceInputTable" data-target="order" data-id="${o.id}" data-field="comment">🎙</button>
               <button class="btn-field-icon" title="Развернуть комментарий" data-act="openTextModal" data-type="order" data-id="${o.id}" data-field="comment">⛶</button>
             </div>
           </div>
@@ -924,7 +927,7 @@ function renderOrders(){
             <button class="mini" data-act="photo" data-id="${o.id}">${o.photo?'Изм.':'+ Фото'}</button>
             ${o.photo ? `<img class="thumb" data-act="view" data-id="${o.id}" src="${o.photo}" alt="фото" loading="lazy" decoding="async">` : ''}
           </div>
-          ${o.photo ? `<button class="btn-ocr" data-act="ocr" data-id="${o.id}" title="Автоматически распознать текст акта и заполнить данные">📄 Распознать</button>` : ''}
+          ${o.photo ? `<button class="btn-ocr" data-act="ocr" data-id="${o.id}" title="Распознать рукописный текст акта и заполнить данные">📄 Распознать</button>` : ''}
         </td>
         <td style="white-space:nowrap;text-align:center">
           <button class="act-btn" title="Копировать" data-act="dup" data-id="${o.id}">＋</button>
@@ -1051,10 +1054,19 @@ function renderPlans(){
       <td style="text-align:center">${i+1}</td>
       <td><input type="date" class="date-picker-input" data-plan-id="${p.id}" data-plan-field="date" value="${esc(p.date)}" title="Нажмите для открытия календаря"></td>
       <td>
-        <div class="expandable-field task-field">
-          <textarea class="auto-expand" placeholder="Задача..." data-plan-id="${p.id}" data-plan-field="task" rows="1">${esc(p.task)}</textarea>
+        <div class="expandable-field farm-field">
+          <textarea class="auto-expand" placeholder="Название хозяйства..." data-plan-id="${p.id}" data-plan-field="farm" rows="1">${esc(p.farm||'')}</textarea>
           <div class="field-btns-group">
-            <button class="btn-field-icon" title="Диктовать голосом" data-act="voiceInput" data-plan-id="${p.id}">🎙</button>
+            <button class="btn-field-icon" title="Диктовать голосом" data-act="voiceInputTable" data-target="plan" data-id="${p.id}" data-field="farm">🎙</button>
+            <button class="btn-field-icon" title="Развернуть" data-act="openTextModal" data-type="plan" data-id="${p.id}" data-plan-id="${p.id}" data-field="farm">⛶</button>
+          </div>
+        </div>
+      </td>
+      <td>
+        <div class="expandable-field task-field">
+          <textarea class="auto-expand" placeholder="Описание задачи..." data-plan-id="${p.id}" data-plan-field="task" rows="1">${esc(p.task)}</textarea>
+          <div class="field-btns-group">
+            <button class="btn-field-icon" title="Диктовать голосом" data-act="voiceInputTable" data-target="plan" data-id="${p.id}" data-field="task">🎙</button>
             <button class="btn-field-icon" title="Развернуть" data-act="openTextModal" data-type="plan" data-id="${p.id}" data-plan-id="${p.id}" data-field="task">⛶</button>
           </div>
         </div>
@@ -1063,6 +1075,7 @@ function renderPlans(){
         <div class="expandable-field comment-field">
           <textarea class="auto-expand" placeholder="Заметка..." data-plan-id="${p.id}" data-plan-field="comment" rows="1">${esc(p.comment||'')}</textarea>
           <div class="field-btns-group">
+            <button class="btn-field-icon" title="Диктовать голосом" data-act="voiceInputTable" data-target="plan" data-id="${p.id}" data-field="comment">🎙</button>
             <button class="btn-field-icon" title="Развернуть" data-act="openTextModal" data-type="plan" data-id="${p.id}" data-plan-id="${p.id}" data-field="comment">⛶</button>
           </div>
         </div>
@@ -1074,7 +1087,7 @@ function renderPlans(){
     </tr>`;
   });
 
-  document.getElementById('tbodyPlans').innerHTML = html || '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">Нет планов</td></tr>';
+  document.getElementById('tbodyPlans').innerHTML = html || '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">Нет планов</td></tr>';
   document.querySelectorAll('#tbodyPlans textarea.auto-expand').forEach(autoResize);
   document.getElementById('plansBadge').textContent = plans.filter(p=>!p.done).length;
 }
@@ -1095,7 +1108,6 @@ function renderSummary(){
     <div class="card"><div class="num-big">${fmtNum(sum)} ч.</div><div class="lbl2">Сумма часов</div></div>
   `;
 
-  // Итоги по месяцам с детальной раскладкой по сотрудникам
   const monthsData = {};
   orders.forEach(o => {
     const k = monthKey(o.date);
@@ -1155,8 +1167,40 @@ function renderAll(){
 }
 
 /* =========================================================
-   ОПТИЧЕСКОЕ РАСПОЗНАВАНИЕ ТЕКСТА АКТА (OCR)
+   РАСПОЗНАВАНИЕ РУКОПИСНОГО ТЕКСТА АКТА (OCR)
    ========================================================= */
+// Предобработка фото на Canvas для четкого распознавания рукописных записей
+function preprocessImageForHandwriting(imageSrc) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imgData.data;
+
+      // 1. Оттенки серого и адаптивное повышение контраста
+      for (let i = 0; i < data.length; i += 4) {
+        const avg = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        // Усиливаем темные рукописные чернила ручки
+        const contrastVal = avg < 140 ? avg * 0.6 : Math.min(255, avg * 1.25);
+        data[i] = contrastVal;
+        data[i + 1] = contrastVal;
+        data[i + 2] = contrastVal;
+      }
+      ctx.putImageData(imgData, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => resolve(imageSrc);
+    img.src = imageSrc;
+  });
+}
+
 async function recognizeActPhoto(orderId, btnEl) {
   const o = orders.find(x => x.id === orderId);
   if (!o || !o.photo) {
@@ -1165,7 +1209,7 @@ async function recognizeActPhoto(orderId, btnEl) {
   }
 
   if (typeof Tesseract === 'undefined') {
-    alert('Модуль оптического распознавания загружается, повторите попытку через пару секунд.');
+    alert('Модуль OCR загружается, повторите попытку через пару секунд.');
     return;
   }
 
@@ -1173,77 +1217,117 @@ async function recognizeActPhoto(orderId, btnEl) {
   const bannerText = document.getElementById('ocrStatusText');
   if (banner) {
     banner.classList.add('show');
-    bannerText.textContent = 'Распознавание текста акта...';
+    bannerText.textContent = 'Обработка и распознавание рукописного акта...';
   }
   if (btnEl) btnEl.classList.add('scanning');
 
   try {
-    const result = await Tesseract.recognize(o.photo, 'rus+eng', {
+    const enhancedPhoto = await preprocessImageForHandwriting(o.photo);
+
+    const result = await Tesseract.recognize(enhancedPhoto, 'rus+eng', {
       logger: m => {
         if (m.status === 'recognizing text' && bannerText) {
-          bannerText.textContent = `Распознавание: ${Math.round(m.progress * 100)}%`;
+          bannerText.textContent = `Распознавание рукописи: ${Math.round(m.progress * 100)}%`;
         }
       }
     });
 
     const text = result.data.text || '';
     if (!text.trim()) {
-      alert('Не удалось различить печатный текст на фото. Убедитесь, что фото четкое.');
+      alert('Не удалось различить текст на фото. Убедитесь, что рукописные записи хорошо освещены.');
       return;
     }
 
     let foundDate = null;
     let foundNum = null;
     let foundClient = null;
+    let foundEmpKey = null;
+    let foundEmpName = null;
     let foundHours = null;
 
-    // 1. Поиск даты (ДД.ММ.ГГГГ или ДД/ММ/ГГГГ)
-    const dateMatch = text.match(/(\d{2})[./-](\d{2})[./-](20\d{2})/);
+    // 1. Поиск даты (цифровая и рукописная словесная)
+    const dateMatch = text.match(/(\d{1,2})[./\s-](\d{1,2}|[а-яА-ЯёЁ]+)[./\s-](20\d{2}|\d{2})/i);
     if (dateMatch) {
-      foundDate = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+      let day = dateMatch[1].padStart(2, '0');
+      let monthPart = dateMatch[2].toLowerCase();
+      let year = dateMatch[3];
+      if (year.length === 2) year = '20' + year;
+
+      const monthsMap = {
+        'янв': '01', 'фев': '02', 'мар': '03', 'апр': '04', 'май': '05', 'мая': '05',
+        'июн': '06', 'июл': '07', 'авг': '08', 'сен': '09', 'окт': '10', 'ноя': '11', 'дек': '12'
+      };
+
+      let month = '01';
+      if (/^\d+$/.test(monthPart)) {
+        month = monthPart.padStart(2, '0');
+      } else {
+        for (let prefix in monthsMap) {
+          if (monthPart.startsWith(prefix)) { month = monthsMap[prefix]; break; }
+        }
+      }
+      foundDate = `${year}-${month}-${day}`;
     }
 
-    // 2. Поиск номера заказа или акта
-    const numMatch = text.match(/(?:заказ|акт|№|n°|no\.?)\s*([0-9A-ZА-Я\-_/]+)/i);
+    // 2. Поиск номера заказа / акта
+    const numMatch = text.match(/(?:заказ|акт|№|n|no|номер)\s*[:\-\s]?\s*([0-9A-Za-zА-Яа-я\-_/]+)/i);
     if (numMatch && numMatch[1]) {
       foundNum = numMatch[1].replace(/[^0-9A-Za-zА-Яа-я\-_/]/g, '').trim();
     }
 
-    // 3. Поиск названия хозяйства / заказчика / клиента
-    const clientMatch = text.match(/(?:заказчик|клиент|хозяйство|спк|ооо|зао|кфх|пао)\s*[:\-\s]?\s*([«"А-Яа-яA-Za-z0-9\s\-]+)/i);
+    // 3. Поиск клиента / хозяйства
+    const clientMatch = text.match(/(?:хозяйство|клиент|заказчик|спк|ооо|зао|кфх|колхоз|пао)\s*[:\-\s]?\s*([«"А-Яа-яA-Za-z0-9\s\-]+)/i);
     if (clientMatch && clientMatch[1]) {
       foundClient = clientMatch[1].split('\n')[0].replace(/[«»"]/g, '').trim();
     }
 
-    // 4. Поиск количества часов
-    const hoursMatch = text.match(/(\d+(?:[.,]\d+)?)\s*(?:час|ч\b|ч\.)/i);
+    // 4. Поиск фамилии мастера среди сотрудников (нечёткое распознавание)
+    const lowerText = text.toLowerCase();
+    for (let emp of EMPLOYEES) {
+      const code = emp[0];
+      const name = emp[1].toLowerCase();
+      // Ищем основу фамилии (напр. "брагин", "быстров", "вепрев", "зуйков", "коврижн", "плюснин")
+      const root = name.slice(0, Math.max(4, name.length - 2));
+      if (lowerText.includes(root)) {
+        foundEmpKey = code;
+        foundEmpName = emp[1];
+        break;
+      }
+    }
+
+    // 5. Поиск часов
+    const hoursMatch = text.match(/(?:часов|часа|час|ч\b|ч\.|время)\s*[:\-\s]?\s*(\d+(?:[.,]\d+)?)/i) ||
+                       text.match(/(\d+(?:[.,]\d+)?)\s*(?:час|ч\b|ч\.)/i);
     if (hoursMatch && hoursMatch[1]) {
       foundHours = parseFloat(hoursMatch[1].replace(',', '.'));
     }
 
-    // Заполнение полей заказа, если они пусты
     let changes = [];
-    if (foundDate && !o.date) { o.date = foundDate; changes.push(`Дата: ${fmtDate(foundDate)}`); }
-    if (foundNum && !o.num) { o.num = foundNum; changes.push(`№ заказа: ${foundNum}`); }
-    if (foundClient && (!o.client || o.client === 'Клиент')) { o.client = foundClient; changes.push(`Клиент: ${foundClient}`); }
+    if (foundDate) { o.date = foundDate; changes.push(`Дата: ${fmtDate(foundDate)}`); }
+    if (foundNum) { o.num = foundNum; changes.push(`№ заказа: ${foundNum}`); }
+    if (foundClient) { o.client = foundClient; changes.push(`Клиент: ${foundClient}`); }
 
-    // Если найдены часы и в заказе они еще не разнесены, заносим в комментарий или первому сотруднику
-    if (foundHours && !isNaN(foundHours)) {
-      changes.push(`Часов по акту: ${foundHours}`);
+    if (foundEmpKey && foundHours) {
+      o.hours[foundEmpKey] = foundHours;
+      changes.push(`Сотрудник ${foundEmpName}: ${foundHours} ч.`);
+    } else if (foundEmpKey) {
+      changes.push(`Найден сотрудник: ${foundEmpName}`);
+    } else if (foundHours) {
+      changes.push(`Часов в акте: ${foundHours}`);
     }
 
-    // Автоматическое сохранение распознанного сырого текста в комментарий заказа
-    const previewText = text.replace(/\s+/g, ' ').trim().slice(0, 180);
-    if (!o.comment) {
-      o.comment = `OCR: ${previewText}`;
+    // Распознанный рукописный фрагмент в комментарии
+    const rawClean = text.replace(/\s+/g, ' ').trim().slice(0, 160);
+    if (!o.comment && rawClean) {
+      o.comment = `Акт: ${rawClean}`;
     }
 
     renderOrders();
     triggerSync();
 
     const reportMsg = changes.length 
-      ? `Успешно распознано и внесено:\n• ${changes.join('\n• ')}`
-      : `Текст с акта прочитан:\n"${previewText}..."\nДанные внесены в комментарий к заказу.`;
+      ? `Рукописный акт распознан:\n• ${changes.join('\n• ')}`
+      : `Текст акта прочитан:\n"${rawClean}..."\nДанные внесены в комментарий к заказу.`;
 
     alert(reportMsg);
   } catch (err) {
@@ -1256,7 +1340,7 @@ async function recognizeActPhoto(orderId, btnEl) {
 }
 
 /* =========================================================
-   ГОЛОСОВОЙ ВВОД (РАСПОЗНАВАНИЕ РЕЧИ)
+   ГОЛОСОВОЙ ВВОД (SPEECH RECOGNITION)
    ========================================================= */
 let speechRecognition = null;
 let activeVoiceBtn = null;
@@ -1271,7 +1355,7 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
 
 function startVoiceRecognition(onResultCallback, buttonEl) {
   if (!speechRecognition) {
-    alert('Ваш браузер не поддерживает голосовой ввод. Рекомендуется использовать Chrome или Яндекс.');
+    alert('Ваш браузер не поддерживает голосовой ввод. Используйте Google Chrome или Яндекс Браузер.');
     return;
   }
   if (activeVoiceBtn) {
@@ -1315,19 +1399,18 @@ function openTextModal(type, id, field){
   const modal = document.getElementById('textModalOverlay');
   const title = document.getElementById('textModalTitle');
   const area = document.getElementById('textModalArea');
-  const micBtn = document.getElementById('btnModalVoice');
 
   let currentVal = '';
   if(type === 'order'){
     const o = orders.find(x => x.id === id);
     if(o) currentVal = o[field] || '';
     title.textContent = field === 'client' ? `Клиент (Заказ №${o?o.num:'—'})` : `Комментарий к заказу №${o?o.num:'—'}`;
-    if(micBtn) micBtn.style.display = 'none';
   } else {
     const p = plans.find(x => x.id === id);
     if(p) currentVal = p[field] || '';
-    title.textContent = field === 'task' ? 'Описание задачи' : 'Комментарий к задаче';
-    if(micBtn) micBtn.style.display = 'inline-flex';
+    if(field === 'farm') title.textContent = 'Название хозяйства';
+    else if(field === 'task') title.textContent = 'Описание задачи';
+    else title.textContent = 'Комментарий к задаче';
   }
   area.value = currentVal;
   modal.classList.add('open');
@@ -1410,13 +1493,28 @@ tbody.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if(!el) return;
   const act = el.dataset.act, id = el.dataset.id;
+
+  // Голосовой ввод прямо из таблицы заказов
+  if(act === 'voiceInputTable' && el.dataset.target === 'order') {
+    const field = el.dataset.field;
+    const o = orders.find(x => x.id === id);
+    startVoiceRecognition((text) => {
+      if(o) {
+        const prev = (o[field] || '').trim();
+        o[field] = prev ? (prev + ' ' + text) : text;
+        renderOrders();
+        triggerSync();
+      }
+    }, el);
+    return;
+  }
+
   if(act === 'openTextModal'){ openTextModal(el.dataset.type, id, el.dataset.field); return; }
   if(act === 'toggle'){ collapsed[el.dataset.month] = !collapsed[el.dataset.month]; triggerSync(); renderOrders(); return; }
 
   const o = orders.find(x => x.id === id);
   if(!o) return;
 
-  // Запуск оптического распознавания текста акта
   if(act === 'ocr'){
     recognizeActPhoto(id, el);
     return;
@@ -1473,7 +1571,7 @@ document.getElementById('sixMonthGrid').addEventListener('click', e => {
 });
 document.getElementById('smResetFilter').addEventListener('click', () => { calSelectedDate = null; renderPlans(); });
 document.getElementById('smAddForSelectedDate').addEventListener('click', () => {
-  plans.push({ id:uid(), date: calSelectedDate || todayISO(), task:'', comment:'', emp:'', priority:'normal', done:false });
+  plans.push({ id:uid(), date: calSelectedDate || todayISO(), farm:'', task:'', comment:'', emp:'', priority:'normal', done:false });
   triggerSync(); renderPlans();
 });
 
@@ -1483,7 +1581,8 @@ tbodyPlans.addEventListener('input', e => {
   const el = e.target, id = el.dataset.planId;
   const p = plans.find(x => x.id === id);
   if(!p) return;
-  if(el.dataset.planField === 'task'){ p.task = el.value; autoResize(el); }
+  if(el.dataset.planField === 'farm'){ p.farm = el.value; autoResize(el); }
+  else if(el.dataset.planField === 'task'){ p.task = el.value; autoResize(el); }
   else if(el.dataset.planField === 'comment'){ p.comment = el.value; autoResize(el); }
   triggerSync();
 });
@@ -1513,11 +1612,13 @@ tbodyPlans.addEventListener('click', e => {
   const id = btn.dataset.planId || btn.dataset.id;
   const p = plans.find(x => x.id === id);
 
-  if(act === 'voiceInput') {
+  // Голосовой ввод прямо из таблицы планов
+  if(act === 'voiceInputTable' && btn.dataset.target === 'plan') {
+    const field = btn.dataset.field;
     startVoiceRecognition((text) => {
       if(p) {
-        const prev = (p.task || '').trim();
-        p.task = prev ? (prev + ' ' + text) : text;
+        const prev = (p[field] || '').trim();
+        p[field] = prev ? (prev + ' ' + text) : text;
         renderPlans();
         triggerSync();
       }
@@ -1559,7 +1660,7 @@ document.getElementById('btnAdd').addEventListener('click', () => {
 });
 
 document.getElementById('btnAddPlan').addEventListener('click', () => {
-  plans.push({ id:uid(), date: calSelectedDate || todayISO(), task:'', comment:'', emp:'', priority:'normal', done:false });
+  plans.push({ id:uid(), date: calSelectedDate || todayISO(), farm:'', task:'', comment:'', emp:'', priority:'normal', done:false });
   triggerSync(); renderPlans();
 });
 
@@ -1592,7 +1693,7 @@ document.getElementById('fileInput').addEventListener('change', e => {
   reader.onload = ev => {
     const img = new Image();
     img.onload = () => {
-      const max = 1200; // Достаточно четкое для OCR распознавания
+      const max = 1200;
       let w = img.width, h = img.height;
       if(w > max || h > max){ const k = max / Math.max(w, h); w = Math.round(w * k); h = Math.round(h * k); }
       const c = document.createElement('canvas'); c.width = w; c.height = h;
@@ -1603,8 +1704,7 @@ document.getElementById('fileInput').addEventListener('change', e => {
         triggerSync();
         renderOrders();
         
-        // Предложение распознать текст сразу после загрузки фото
-        if(confirm('Фото акта загружено. Хотите автоматически распознать номер, дату и клиента из акта?')) {
+        if(confirm('Фото акта загружено. Хотите автоматически распознать рукописный акт (дату, клиента, фамилию и часы)?')) {
           recognizeActPhoto(photoTargetId);
         }
       }
@@ -1660,6 +1760,7 @@ if (btnHtml) {
         planTrs += `<tr>
           <td>${idx+1}</td>
           <td>${fmtDate(p.date)}</td>
+          <td>${esc(p.farm||'—')}</td>
           <td>${esc(p.task)}</td>
           <td>${esc(p.comment||'—')}</td>
           <td>${empName}</td>
@@ -1682,7 +1783,7 @@ if (btnHtml) {
       <h2>Заказы</h2>
       <table><thead><tr><th>Дата</th><th>№ заказа</th><th>Клиент</th><th>Комментарии</th>${EMPLOYEES.map(e => `<th>${e[1]}</th>`).join('')}<th>Оплачено</th><th>Начислено</th><th>Фото</th></tr></thead><tbody>${trs||'<tr><td colspan="13">Нет заказов</td></tr>'}</tbody></table>
       <h2>Планы и задачи</h2>
-      <table><thead><tr><th>№</th><th>Дата</th><th>Задача</th><th>Комментарий</th><th>Ответственный</th><th>Приоритет</th><th>Статус</th></tr></thead><tbody>${planTrs||'<tr><td colspan="7">Нет планов</td></tr>'}</tbody></table>
+      <table><thead><tr><th>№</th><th>Дата</th><th>Хозяйство</th><th>Задача</th><th>Комментарий</th><th>Ответственный</th><th>Приоритет</th><th>Статус</th></tr></thead><tbody>${planTrs||'<tr><td colspan="8">Нет планов</td></tr>'}</tbody></table>
       <h2>Фото актов</h2>${photos||'<p style="text-align:center;color:#8b949e">Фото не приложены.</p>'}
       </body></html>`;
 
@@ -1731,7 +1832,7 @@ function downloadExcelDirectly() {
     <table border="1">
       <thead>
         <tr style="background:#ddd;">
-          <th>№</th><th>Дата</th><th>Задача</th><th>Комментарий</th><th>Ответственный</th><th>Приоритет</th><th>Статус</th>
+          <th>№</th><th>Дата</th><th>Хозяйство</th><th>Задача</th><th>Комментарий</th><th>Ответственный</th><th>Приоритет</th><th>Статус</th>
         </tr>
       </thead>
       <tbody>
@@ -1740,6 +1841,7 @@ function downloadExcelDirectly() {
           return `<tr>
             <td>${i+1}</td>
             <td>${fmtDate(p.date)}</td>
+            <td>${esc(p.farm||'')}</td>
             <td>${esc(p.task)}</td>
             <td>${esc(p.comment||'')}</td>
             <td>${emp}</td>
