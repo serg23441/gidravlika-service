@@ -209,6 +209,14 @@
   input.num { width: 110px; }
   input.hours { width: 70px; text-align: center; }
 
+  /* Подсветка ячеек часов больше 0 */
+  input.hours.hours-active {
+    background: rgba(88, 166, 255, 0.18) !important;
+    border-color: var(--blue) !important;
+    color: var(--blue) !important;
+    font-weight: 700 !important;
+  }
+
   .expandable-field { position: relative; display: flex; align-items: center; width: 100%; }
   .client-field { min-width: 240px; }
   .comment-field-order { min-width: 240px; }
@@ -468,7 +476,7 @@
 </head>
 <body>
 
-<!-- Экран авторизации (Пароль 1787) -->
+<!-- Экран блокировки (Пароль 1787) -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card" id="authCard">
     <div class="auth-icon">🔒</div>
@@ -919,7 +927,10 @@ function renderOrders(){
             </div>
           </div>
         </td>
-        ${EMPLOYEES.map(e => `<td><input type="number" min="0" step="0.5" class="hours" data-id="${o.id}" data-field="hours" data-emp="${e[0]}" value="${o.hours[e[0]]||0}"></td>`).join('')}
+        ${EMPLOYEES.map(e => {
+          const hVal = parseFloat(o.hours[e[0]]) || 0;
+          return `<td><input type="number" min="0" step="0.5" class="hours ${hVal > 0 ? 'hours-active' : ''}" data-id="${o.id}" data-field="hours" data-emp="${e[0]}" value="${hVal}"></td>`;
+        }).join('')}
         <td>${statusBtn(o,'paid')}</td>
         <td>${statusBtn(o,'accrued')}</td>
         <td class="photo-cell">
@@ -1332,7 +1343,7 @@ async function recognizeActPhoto(orderId, btnEl) {
       }
     }
 
-    // Занесение распознанных данных в заказ (без комментариев)
+    // Занесение распознанных данных в заказ (без добавления сырого текста в комментарии)
     let changes = [];
     if (foundClient) {
       o.client = foundClient;
@@ -1499,7 +1510,13 @@ tbody.addEventListener('input', e => {
   const el = e.target, id = el.dataset.id;
   const o = orders.find(x => x.id === id);
   if(!o) return;
-  if(el.dataset.field === 'hours'){ o.hours[el.dataset.emp] = parseFloat(el.value)||0; updateTotals(orders); renderSummary(); }
+  if(el.dataset.field === 'hours'){
+    const val = parseFloat(el.value) || 0;
+    o.hours[el.dataset.emp] = val;
+    el.classList.toggle('hours-active', val > 0);
+    updateTotals(orders);
+    renderSummary();
+  }
   else if(el.dataset.field === 'num'){ o.num = el.value; }
   else if(el.dataset.field === 'client' || el.dataset.field === 'comment'){ o[el.dataset.field] = el.value; autoResize(el); }
   triggerSync();
@@ -1565,10 +1582,23 @@ tbody.addEventListener('click', e => {
   else if(act === 'photo'){ photoTargetId = id; document.getElementById('fileInput').click(); }
   else if(act === 'view'){ document.getElementById('lbImg').src = o.photo; document.getElementById('lightbox').classList.add('open'); }
   else if(act === 'dup'){
-    const copy = JSON.parse(JSON.stringify(o));
-    copy.id = uid(); copy.seq = seq++;
-    orders.splice(orders.indexOf(o)+1, 0, copy);
-    triggerSync(); renderOrders(); renderSummary();
+    // Дублирование: сохраняем дату, номер ставим ГИЦБ, часы обнуляем
+    const copy = {
+      id: uid(),
+      seq: seq++,
+      date: o.date || todayISO(),
+      num: 'ГИЦБ',
+      client: o.client || 'Клиент',
+      comment: '',
+      hours: emptyHours(),
+      paid: 'no',
+      accrued: 'no',
+      photo: null
+    };
+    orders.splice(orders.indexOf(o) + 1, 0, copy);
+    triggerSync();
+    renderOrders();
+    renderSummary();
   }
   else if(act === 'del'){
     if(confirm('Удалить заказ?')){ orders = orders.filter(x => x.id !== id); triggerSync(); renderOrders(); renderSummary(); }
